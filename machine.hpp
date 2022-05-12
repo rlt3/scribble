@@ -1,4 +1,5 @@
 #ifndef SCRIBBLE_MACHINE
+#define SCRIBBLE_MACHINE
 
 #include <vector>
 

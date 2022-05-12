@@ -1,12 +1,16 @@
 #ifndef SCRIBBLE_PARSE
+#define SCRIBBLE_PARSE
 
 #include <string>
 #include <vector>
+#include <map>
 #include <iostream>
 #include <sstream>
 #include <cctype>
 
 #include "definitions.hpp"
+#include "token.hpp"
+#include "expression.hpp"
 
 /*
  * Language:
@@ -14,9 +18,8 @@
  * string: "[A-Za-z0-9 ]+" ; any string wrapped in quotes
  * number: [0-9]+ ; integer numbers only
  * name: [A-Za-z0-9]+ ; any string without a space
- * symbol: <string> | <number> | <name>
- * word: <symbol>[(<word>[ <word>]*)]
- * sentence: <word>[ <word>]*
+ * expression: <name>[(<expression>*)] | <string> | <number>
+ * list: <expression>*
  *
  * Every parenthesis is a new list. Lists are just linear collections of
  * symbols which should exist in the program. Lists can be named and anonymous.
@@ -50,15 +53,24 @@ public:
     {
     }
 
-    std::vector<std::string>
+    void
     tokenize ()
     {
-        sentence();
-        return tokens;
+        list();
+    }
+
+    Token&
+    intern (TokenType type, std::string str)
+    {
+        auto iter = tokens.find(str);
+        if (iter == tokens.end()) {
+            tokens[str] = Token(type, str);
+        }
+        return tokens[str];
     }
 
 protected:
-    std::vector<std::string> tokens;
+    std::map<std::string, Token> tokens;
     std::istream& stream;
 
     int
@@ -77,7 +89,6 @@ protected:
     expect (int e)
     {
         int c = next();
-        printf("`%c`(%d) != `%c`(%d)\n", c, c, e, e);
         if (c != e)
             fatal("Expected `%c` but received `%c`", e, c);
     }
@@ -102,7 +113,7 @@ protected:
     }
 
 private:
-    std::string&
+    Token&
     string ()
     {
         int c;
@@ -112,26 +123,42 @@ private:
         while (true) {
             c = next();
             if (eof())
-                fatal("Expected end of string `\"', got instead: %c\n", c);
+                fatal("Encountered end-of-file before terminating string");
             if (c == '"')
                 break;
             str += c;
         }
 
-        tokens.push_back(str);
-        return tokens.back();
+        return intern(TKN_STRING, str);
     }
 
-    void
+    Token&
     number ()
     {
+        int c;
+        std::string str;
+
+        while (true) {
+            c = peek();
+            if (eof() || isspace(c))
+                break;
+            if (!isdigit(c))
+                fatal("Expected digit, got `%c' instead", c);
+            str += next();
+        }
+
+        return intern(TKN_INTEGER, str);
     }
 
-    std::string&
+    Token&
     name ()
     {
         int c;
         std::string str;
+
+        c = peek();
+        if (!isalpha(c))
+            fatal("Names cannot begin with numbers or digits");
 
         while (true) {
             c = peek();
@@ -140,24 +167,18 @@ private:
             str += next();
         }
 
-        tokens.push_back(str);
-        return tokens.back();
+        return intern(TKN_NAME, str);
     }
 
-    std::string&
-    symbol ()
+    Expression
+    expression ()
     {
         if (peek() == '"')
-            return string();
-        else
-            return name();
-    }
+            return Expression(string());
+        else if (isdigit(peek()))
+            return Expression(number());
 
-    std::string
-    word ()
-    {
-        std::string self = symbol();
-        self += "( ";
+        Expression expr(name());
         skipwhitespace();
 
         if (peek() == '(') {
@@ -170,21 +191,20 @@ private:
                     next();
                     break;
                 }
-                self += word();
-                self += " ";
+                expr.addChild(expression());
             }
         }
 
-        self += ")";
-        return self;
+        return expr;
     }
 
     void
-    sentence ()
+    list ()
     {
         while (!eof()) {
             skipwhitespace();
-            printf("| %s\n", word().c_str());
+            auto expr = expression();
+            expr.print();
         }
     }
 };
