@@ -53,10 +53,10 @@ public:
     {
     }
 
-    void
-    tokenize ()
+    Expression
+    expression ()
     {
-        list();
+        return list();
     }
 
     Token&
@@ -171,14 +171,14 @@ private:
     }
 
     Expression
-    expression ()
+    expr ()
     {
         if (peek() == '"')
             return Expression(string());
         else if (isdigit(peek()))
             return Expression(number());
 
-        Expression expr(name());
+        Expression e(name());
         skipwhitespace();
 
         if (peek() == '(') {
@@ -191,21 +191,23 @@ private:
                     next();
                     break;
                 }
-                expr.addChild(expression());
+                e.addChild(expr());
             }
         }
 
-        return expr;
+        return e;
     }
 
-    void
+    Expression
     list ()
     {
-        while (!eof()) {
-            skipwhitespace();
-            auto expr = expression();
-            expr.print();
-        }
+        skipwhitespace();
+        return expr();
+
+        //while (!eof()) {
+        //    skipwhitespace();
+        //    auto e = expr();
+        //}
     }
 };
 

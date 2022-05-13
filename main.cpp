@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "machine.hpp"
 #include "parse.hpp"
+#include "interpret.hpp"
 
 int
 main (int argc, char **argv)
@@ -66,8 +66,10 @@ main (int argc, char **argv)
      */
 
     Parse parse(std::cin);
+    Interpret interpret;
 
-    parse.tokenize();
+    auto expr = parse.expression();
+    interpret.expression(expr);
 
     return 0;
 }
