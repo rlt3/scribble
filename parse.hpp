@@ -140,7 +140,7 @@ private:
 
         while (true) {
             c = peek();
-            if (eof() || isspace(c))
+            if (eof() || isspace(c) || isparen(c))
                 break;
             if (!isdigit(c))
                 fatal("Expected digit, got `%c' instead", c);

@@ -35,7 +35,8 @@ public:
     }
 
     /*
-     * PRIMITIVES
+     * Primitives of the machine are defined below. These primitives are best
+     * described as assembly instructions.
      */
 
     /* move an immediate value into a register */
@@ -88,21 +89,17 @@ public:
         registers[reg] = stack.pop();
     }
 
-    /* 
-     * add the top two values on the stack, placing the result
-     * on the stack.
-     */
-    void
-    add ()
+    Data
+    read (Register reg)
     {
-        Data d1 = stack.pop();
-        Data d2 = stack.pop();
-        
-        unsigned long a = (unsigned long) d1;
-        unsigned long b = (unsigned long) d2;
-        unsigned long c = a + b;
+        return registers[reg];
+    }
 
-        stack.push((void*) c);
+    /* print the value at the given stack index as hex */
+    void
+    print (int idx)
+    {
+        printf("0x%08lx\n", (unsigned long) *stack.peek(idx));
     }
 
 protected:

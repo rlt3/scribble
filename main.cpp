@@ -13,7 +13,7 @@ main (int argc, char **argv)
     //M.push(REG1);
     //M.push(REG2);
     //M.add();
-    //printf("%lu\n", (unsigned long) M.peek(0));
+    //M.print(0);
 
     /*
      * In this system, the primitives always exist. One can define more symbols
@@ -68,8 +68,13 @@ main (int argc, char **argv)
     Parse parse(std::cin);
     Interpret interpret;
 
-    auto expr = parse.expression();
-    interpret.expression(expr);
+    auto expr1 = parse.expression();
+    expr1.print();
+    interpret.expression(expr1);
+
+    auto expr2 = parse.expression();
+    expr2.print();
+    interpret.expression(expr2);
 
     return 0;
 }
