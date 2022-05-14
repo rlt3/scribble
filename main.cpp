@@ -3,6 +3,7 @@
 
 #include "parse.hpp"
 #include "interpret.hpp"
+#include "bytecode.hpp"
 
 int
 main (int argc, char **argv)

@@ -89,15 +89,9 @@ public:
         registers[reg] = stack.pop();
     }
 
-    Data
-    read (Register reg)
-    {
-        return registers[reg];
-    }
-
     /* print the value at the given stack index as hex */
     void
-    print (int idx)
+    print (long idx)
     {
         printf("0x%08lx\n", (unsigned long) *stack.peek(idx));
     }
