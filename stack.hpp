@@ -1,10 +1,14 @@
 #ifndef SCRIBBLE_STACK
 
 #include <assert.h>
+#include "data.hpp"
 #include "definitions.hpp"
 
 /*
  * Byte-addressable stack implementation.
+ *
+ * The stack as a reserved area for instructions and a regular push/pop stack
+ * for scratch values during execution.
  */
 
 class Stack
@@ -12,11 +16,29 @@ class Stack
 public:
     Stack ()
     {
-        stack_idx = 0;
-        stack_size = 1024;
-        stack = (Data*) malloc(sizeof(stack_size * sizeof(Data)));
-        if (stack == NULL)
-            fatal("Out of memory!");
+        num_reserved = 1024;
+        stack_size = 4096;
+        stack_idx = num_reserved;
+
+        assert(num_reserved > 0);
+        assert(stack_size > num_reserved);
+
+        stack = new Data[stack_size];
+    }
+
+    ~Stack ()
+    {
+        delete[] stack;
+    }
+
+    /*
+     * Index into the reserved portion of the stack as if it were an array with
+     * 0-indexing.
+     */
+    Data*
+    reserved (unsigned long idx)
+    {
+        return stack + idx;
     }
 
     void
@@ -37,17 +59,21 @@ public:
     Data
     pop ()
     {
-        if (stack_idx == 0)
+        if (stack_idx == num_reserved)
             fatal("Pop: stack underflow");
         stack_idx--;
         Data data = stack[stack_idx];
         return data;
     }
 
+    /*
+     * From the top of the stack, relatively address to peek values. The
+     * argument should be in the range (-inf, 0]
+     */
     Data*
-    peek (signed num)
+    peek (signed long num)
     {
-        if (stack_idx == 0)
+        if (stack_idx == num_reserved)
             fatal("Peek: nothing on stack");
         return stack + stack_idx + num - 1;
     }
@@ -56,6 +82,7 @@ protected:
     Data* stack;
     unsigned stack_size;
     unsigned stack_idx;
+    unsigned num_reserved;
 };
 
 #endif

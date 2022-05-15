@@ -2,16 +2,12 @@
 #define SCRIBBLE_MACHINE
 
 #include <vector>
+#include <queue>
 
 #include "definitions.hpp"
+#include "data.hpp"
 #include "stack.hpp"
-
-typedef enum {
-    REG1 = 0,
-    REG2,
-    REG3,
-    REGCOUNT
-} Register;
+#include "bytecode.hpp"
 
 class Machine
 {
@@ -34,6 +30,75 @@ public:
         return *stack.peek(0);
     }
 
+    /*
+     * Write the given instructions to the machine in the reserved part of the
+     * stack. Returns the idx just after writing the last instruction.
+     */
+    unsigned long
+    write (unsigned long idx, std::queue<Bytecode> instructions)
+    {
+        for (; !instructions.empty(); idx++) {
+            Data *data = stack.reserved(idx);
+            data->isExecutable = true;
+            data->bytecode = instructions.front();
+            instructions.pop();
+        }
+        return idx;
+    }
+
+    /*
+     * Execute starting from the given index on the stack, starting from the
+     * bottom and moving up.
+     */
+    void
+    execute (unsigned long idx)
+    {
+        Data *data = stack.reserved(idx);
+
+        if (!data->isExecutable)
+            fatal("Cannot execute non-executable data at index %d", idx);
+
+        Bytecode bc = data->bytecode;
+        switch (bc.op) {
+            case OP_HALT:
+                return;
+
+            case OP_MOVE:
+                move(bc.value, bc.reg1);
+                break;
+
+            case OP_POINTER:
+                fatal("Unimplemened POINTER");
+                break;
+
+            case OP_LOAD:
+                fatal("Unimplemened LOAD");
+
+            case OP_PUSH:
+                push(bc.reg1);
+                break;
+
+            case OP_POP:
+                push(bc.reg1);
+                break;
+
+            case OP_PRINT:
+                print((long) bc.value);
+                break;
+
+            case OP_ADD:
+                add();
+                break;
+
+            case OP_NULL:
+            default:
+                fatal("NULL bytecode operator!");
+        }
+
+        execute(idx + 1);
+    }
+
+protected:
     /*
      * Primitives of the machine are defined below. These primitives are best
      * described as assembly instructions.
@@ -62,7 +127,8 @@ public:
     void
     pointer (signed num, Register reg)
     {
-        registers[reg] = (Data) stack.peek(num);
+        fatal("TODO pointer");
+        //registers[reg] = (Data) stack.peek(num);
     }
 
     /*
@@ -72,7 +138,8 @@ public:
     void
     load (signed num, Register reg)
     {
-        registers[reg] = (Data) stack.peek(num);
+        fatal("TODO load");
+        //registers[reg] = (Data) stack.peek(num);
     }
 
     /* push a register's value onto the stack */
@@ -93,8 +160,19 @@ public:
     void
     print (long idx)
     {
-        printf("0x%08lx\n", (unsigned long) *stack.peek(idx));
+        Data data = peek(idx);
+        if (data.isExecutable)
+            fatal("Cannot print executable part of stack!");
+        printf("0x%08lx\n", data.value);
     }
+
+    void
+    add ()
+    {
+         Data d1 = stack.pop();
+         Data d2 = stack.pop();
+         stack.push(Data(d1.value + d2.value));
+     }
 
 protected:
     Stack stack;

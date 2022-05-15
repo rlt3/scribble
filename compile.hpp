@@ -12,15 +12,17 @@ public:
     {
     }
 
-    Bytecode
+    std::queue<Bytecode>
     tokens (std::queue<Token> t)
     {
         _tokens = t;
-        return Bytecode();
+        expr();
+        return _bytecode;
     }
 
 protected:
     std::queue<Token> _tokens;
+    std::queue<Bytecode> _bytecode;
 
     Token
     peek ()
@@ -46,6 +48,11 @@ protected:
     }
 
 private:
+
+    void
+    expr ()
+    {
+    }
 };
 
 #endif

@@ -1,20 +1,28 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "parse.hpp"
-#include "compile.hpp"
-#include "interpret.hpp"
+//#include "parse.hpp"
+//#include "compile.hpp"
+//#include "interpret.hpp"
+
+#include "machine.hpp"
 
 int
 main (int argc, char **argv)
 {
-    //Machine M;
-    //M.move(1300, REG1);
-    //M.move(  37, REG2);
-    //M.push(REG1);
-    //M.push(REG2);
-    //M.add();
-    //M.print(0);
+    Machine M;
+
+    std::queue<Bytecode> instructions;
+    instructions.push(Bytecode(OP_MOVE,  REG1,    REGNULL, 1300));
+    instructions.push(Bytecode(OP_MOVE,  REG2,    REGNULL, 37));
+    instructions.push(Bytecode(OP_PUSH,  REG1,    REGNULL, 0));
+    instructions.push(Bytecode(OP_PUSH,  REG2,    REGNULL, 0));
+    instructions.push(Bytecode(OP_ADD,   REGNULL, REGNULL, 0));
+    instructions.push(Bytecode(OP_PRINT, REGNULL, REGNULL, 0));
+    instructions.push(Bytecode(OP_HALT,  REGNULL, REGNULL, 0));
+
+    printf("wrote %lu instructions\n", M.write(0, instructions));
+    M.execute(0);
 
     /*
      * In this system, the primitives always exist. One can define more symbols
@@ -66,17 +74,17 @@ main (int argc, char **argv)
      *   symbols once they've been compiled.
      */
 
-    Parse parse(std::cin);
-    Compile compile;
-    Interpret interpret;
+    //Parse parse(std::cin);
+    //Compile compile;
+    //Interpret interpret;
 
-    auto tokens = parse.stream();
-    while (!tokens.empty()) {
-        Token token = tokens.front();
-        tokens.pop();
-        printf("<%s>%s ", token.typestring().c_str(), token.str.c_str());
-    }
-    putchar('\n');
+    //auto tokens = parse.stream();
+    //while (!tokens.empty()) {
+    //    Token token = tokens.front();
+    //    tokens.pop();
+    //    printf("<%s>%s ", token.typestring().c_str(), token.str.c_str());
+    //}
+    //putchar('\n');
 
     return 0;
 }
