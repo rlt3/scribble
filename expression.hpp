@@ -41,7 +41,7 @@ public:
             case TKN_FLOAT:
                 return EXPR_PRIMITIVE;
 
-            case TKN_NAME:
+            case TKN_SYMBOL:
                 return EXPR_SYMBOL;
 
             case TKN_INVALID:
@@ -77,7 +77,7 @@ public:
             putchar(' ');
 
         printf("%s", token.str.c_str());
-        if (token.type != TKN_NAME) {
+        if (token.type != TKN_SYMBOL) {
             putchar('\n');
             return;
         }

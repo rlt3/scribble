@@ -6,7 +6,10 @@ typedef enum {
     TKN_STRING,
     TKN_INTEGER,
     TKN_FLOAT,
-    TKN_NAME,
+    TKN_SYMBOL,
+    TKN_LPAREN,
+    TKN_RPAREN,
+    TKN_EOF,
 } TokenType;
 
 struct Token
@@ -20,10 +23,31 @@ struct Token
     {
     }
 
+    Token (TokenType type)
+        : type(type)
+        , str("")
+    {
+    }
+
     Token (TokenType type, std::string str)
         : type(type)
         , str(str)
     {
+    }
+
+    std::string
+    typestring ()
+    {
+        switch (type) {
+            case TKN_STRING:  return "String";
+            case TKN_INTEGER: return "Integer";
+            case TKN_FLOAT:   return "Float";
+            case TKN_SYMBOL:  return "Symbol";
+            case TKN_LPAREN:  return "(";
+            case TKN_RPAREN:  return ")";
+            case TKN_INVALID:
+            default:          return "!!BAD!!";
+        }
     }
 };
 

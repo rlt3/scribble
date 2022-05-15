@@ -1,8 +1,8 @@
 #ifndef SCRIBBLE_PARSE
 #define SCRIBBLE_PARSE
 
+#include <queue>
 #include <string>
-#include <vector>
 #include <map>
 #include <iostream>
 #include <sstream>
@@ -49,40 +49,37 @@ class Parse
 {
 public:
     Parse (std::istream& stream)
-        : stream(stream)
+        : _stream(stream)
     {
     }
 
-    Expression
-    expression ()
+    /*
+     * TODO: I'd like this class to be an interface for parsing various types
+     * of buffers. So, `stream', `file`, etc.
+     */
+    std::queue<Token>
+    stream ()
     {
-        return list();
-    }
-
-    Token&
-    intern (TokenType type, std::string str)
-    {
-        auto iter = tokens.find(str);
-        if (iter == tokens.end()) {
-            tokens[str] = Token(type, str);
-        }
-        return tokens[str];
+        tokens = std::queue<Token>();
+        skipwhitespace();
+        expr();
+        return tokens;
     }
 
 protected:
-    std::map<std::string, Token> tokens;
-    std::istream& stream;
+    std::queue<Token> tokens;
+    std::istream& _stream;
 
     int
     next ()
     {
-        return stream.get();
+        return _stream.get();
     }
 
     int
     peek ()
     {
-        return stream.peek();
+        return _stream.peek();
     }
 
     void
@@ -103,7 +100,7 @@ protected:
     bool
     eof ()
     {
-        return stream.eof();
+        return _stream.eof();
     }
 
     bool
@@ -113,7 +110,7 @@ protected:
     }
 
 private:
-    Token&
+    void
     string ()
     {
         int c;
@@ -129,10 +126,10 @@ private:
             str += c;
         }
 
-        return intern(TKN_STRING, str);
+        tokens.push(Token(TKN_STRING, str));
     }
 
-    Token&
+    void
     number ()
     {
         int c;
@@ -147,10 +144,10 @@ private:
             str += next();
         }
 
-        return intern(TKN_INTEGER, str);
+        tokens.push(Token(TKN_INTEGER, str));
     }
 
-    Token&
+    void
     name ()
     {
         int c;
@@ -167,47 +164,48 @@ private:
             str += next();
         }
 
-        return intern(TKN_NAME, str);
+        tokens.push(Token(TKN_SYMBOL, str));
     }
 
-    Expression
+    void
     expr ()
     {
-        if (peek() == '"')
-            return Expression(string());
-        else if (isdigit(peek()))
-            return Expression(number());
+        if (peek() == '"') {
+            string();
+            return;
+        }
+        else if (isdigit(peek())) {
+            number();
+            return;
+        }
 
-        Expression e(name());
+        name();
         skipwhitespace();
 
         if (peek() == '(') {
             next();
+            tokens.push(Token(TKN_LPAREN));
+
             while (true) {
                 skipwhitespace();
                 if (eof())
                     expect(')');
                 if (peek() == ')') {
                     next();
+                    tokens.push(Token(TKN_RPAREN));
                     break;
                 }
-                e.addChild(expr());
+                expr();
             }
         }
-
-        return e;
     }
 
-    Expression
+    void
     list ()
     {
-        skipwhitespace();
-        return expr();
-
-        //while (!eof()) {
-        //    skipwhitespace();
-        //    auto e = expr();
-        //}
+        /* TODO: handle end-of-input even if stream hasn't closed so eof isn't
+         * toggled.
+         */
     }
 };
 

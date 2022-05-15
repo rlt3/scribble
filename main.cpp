@@ -2,8 +2,8 @@
 #include <cstdlib>
 
 #include "parse.hpp"
+#include "compile.hpp"
 #include "interpret.hpp"
-#include "bytecode.hpp"
 
 int
 main (int argc, char **argv)
@@ -67,15 +67,16 @@ main (int argc, char **argv)
      */
 
     Parse parse(std::cin);
+    Compile compile;
     Interpret interpret;
 
-    auto expr1 = parse.expression();
-    expr1.print();
-    interpret.expression(expr1);
-
-    auto expr2 = parse.expression();
-    expr2.print();
-    interpret.expression(expr2);
+    auto tokens = parse.stream();
+    while (!tokens.empty()) {
+        Token token = tokens.front();
+        tokens.pop();
+        printf("<%s>%s ", token.typestring().c_str(), token.str.c_str());
+    }
+    putchar('\n');
 
     return 0;
 }
