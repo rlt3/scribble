@@ -19,6 +19,7 @@ typedef enum {
     OP_POP,
     OP_PRINT,
     OP_ADD,
+    OP_CALL,
 } Operator;
 
 void fatal (const char* format, ...);

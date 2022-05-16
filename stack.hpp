@@ -17,6 +17,8 @@ public:
     Stack ()
     {
         num_reserved = 1024;
+        reserved_idx = 0;
+
         stack_size = 4096;
         stack_idx = num_reserved;
 
@@ -39,6 +41,21 @@ public:
     reserved (unsigned long idx)
     {
         return stack + idx;
+    }
+
+    unsigned long
+    reservedTop ()
+    {
+        return reserved_idx;
+    }
+
+    void
+    pushReserved (Data data)
+    {
+        if (reserved_idx >= num_reserved)
+            fatal("PushReserved: stack overflow");
+        stack[reserved_idx] = data;
+        reserved_idx++;
     }
 
     void
@@ -83,6 +100,7 @@ protected:
     unsigned stack_size;
     unsigned stack_idx;
     unsigned num_reserved;
+    unsigned reserved_idx;
 };
 
 #endif

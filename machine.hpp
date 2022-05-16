@@ -35,15 +35,16 @@ public:
      * stack. Returns the idx just after writing the last instruction.
      */
     unsigned long
-    write (unsigned long idx, std::queue<Bytecode> instructions)
+    writeReserved (std::queue<Bytecode> instructions)
     {
-        for (; !instructions.empty(); idx++) {
-            Data *data = stack.reserved(idx);
-            data->isExecutable = true;
-            data->bytecode = instructions.front();
+        unsigned long start = stack.reservedTop();
+
+        while (!instructions.empty()) {
+            stack.pushReserved(Data(instructions.front()));
             instructions.pop();
         }
-        return idx;
+
+        return start;
     }
 
     /*

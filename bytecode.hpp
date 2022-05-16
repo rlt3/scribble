@@ -23,6 +23,34 @@ struct Bytecode
         , reg2(r2)
         , value(value)
     {}
+
+    Bytecode (Operator op, Register r1, unsigned long value)
+        : op(op)
+        , reg1(r1)
+        , reg2(REGNULL)
+        , value(value)
+    {}
+
+    Bytecode (Operator op, Register r1)
+        : op(op)
+        , reg1(r1)
+        , reg2(REGNULL)
+        , value(0)
+    {}
+
+    Bytecode (Operator op, unsigned long val)
+        : op(op)
+        , reg1(REGNULL)
+        , reg2(REGNULL)
+        , value(val)
+    {}
+
+    Bytecode (Operator op)
+        : op(op)
+        , reg1(REGNULL)
+        , reg2(REGNULL)
+        , value(0)
+    {}
 };
 
 #endif

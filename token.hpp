@@ -35,6 +35,18 @@ struct Token
     {
     }
 
+    signed long
+    toInt ()
+    {
+        return std::stol(str);
+    }
+
+    unsigned long
+    toUInt ()
+    {
+        return std::stoul(str);
+    }
+
     std::string
     typestring ()
     {

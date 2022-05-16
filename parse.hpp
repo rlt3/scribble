@@ -90,10 +90,11 @@ protected:
             fatal("Expected `%c` but received `%c`", e, c);
     }
 
+    /* Skips any available whitespace but stops at new lines */
     void
     skipwhitespace ()
     {
-        while (!eof() && isspace(peek()))
+        while (!eof() && isspace(peek()) && peek() != '\n')
             next();
     }
 

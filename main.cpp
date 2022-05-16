@@ -1,29 +1,14 @@
 #include <cstdio>
 #include <cstdlib>
 
-//#include "parse.hpp"
-//#include "compile.hpp"
+#include "parse.hpp"
+#include "compile.hpp"
 //#include "interpret.hpp"
-
 #include "machine.hpp"
 
 int
 main (int argc, char **argv)
 {
-    Machine M;
-
-    std::queue<Bytecode> instructions;
-    instructions.push(Bytecode(OP_MOVE,  REG1,    REGNULL, 1300));
-    instructions.push(Bytecode(OP_MOVE,  REG2,    REGNULL, 37));
-    instructions.push(Bytecode(OP_PUSH,  REG1,    REGNULL, 0));
-    instructions.push(Bytecode(OP_PUSH,  REG2,    REGNULL, 0));
-    instructions.push(Bytecode(OP_ADD,   REGNULL, REGNULL, 0));
-    instructions.push(Bytecode(OP_PRINT, REGNULL, REGNULL, 0));
-    instructions.push(Bytecode(OP_HALT,  REGNULL, REGNULL, 0));
-
-    printf("wrote %lu instructions\n", M.write(0, instructions));
-    M.execute(0);
-
     /*
      * In this system, the primitives always exist. One can define more symbols
      * which are just collections of primitives. Eventually, symbols will be
@@ -85,6 +70,16 @@ main (int argc, char **argv)
     //    printf("<%s>%s ", token.typestring().c_str(), token.str.c_str());
     //}
     //putchar('\n');
+
+    Parse parse(std::cin);
+    Machine M;
+    Compile compile(M);
+
+    auto tokens = parse.stream();
+    auto instructions = compile.tokens(tokens);
+
+    printf("wrote %lu instructions\n", M.writeReserved(instructions));
+    M.execute(0);
 
     return 0;
 }
