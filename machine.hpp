@@ -48,55 +48,49 @@ public:
     }
 
     /*
+     * Roll back the stack index for the reserved section. This lets us
+     * overwrite definitions. This is useful for executing REPL commands.
+     */
+    void
+    rollbackReserved (unsigned long idx)
+    {
+        stack.reservedRollback(idx);
+    }
+
+    /*
      * Execute starting from the given index on the stack, starting from the
      * bottom and moving up.
      */
     void
-    execute (unsigned long idx)
+    execute (unsigned long entry_point)
     {
-        Data *data = stack.reserved(idx);
+        PC = entry_point;
+        registers[REGBASE] = stack.index();
 
-        if (!data->isExecutable)
-            fatal("Cannot execute non-executable data at index %d", idx);
+        while (true) {
+            Data *data = stack.reserved(PC);
+            PC++;
 
-        Bytecode bc = data->bytecode;
-        switch (bc.op) {
-            case OP_HALT:
-                return;
+            if (!data->isExecutable)
+                fatal("Cannot execute non-executable data at index %d", PC);
 
-            case OP_MOVE:
-                move(bc.value, bc.reg1);
-                break;
+            Bytecode bc = data->bytecode;
+            switch (bc.op) {
+                case OP_HALT:  return;
+                case OP_MOVE:  move(bc.value, bc.reg1); break;
+                case OP_PUSH:  push(bc.reg1); break;
+                case OP_POP:   pop(bc.reg1); break;
+                case OP_PRINT: print((long) bc.value); break;
+                case OP_ADD:   add(); break;
+                case OP_CALL:  call(); break; 
+                case OP_RET:   ret(); break;
 
-            case OP_POINTER:
-                fatal("Unimplemened POINTER");
-                break;
-
-            case OP_LOAD:
-                fatal("Unimplemened LOAD");
-
-            case OP_PUSH:
-                push(bc.reg1);
-                break;
-
-            case OP_POP:
-                push(bc.reg1);
-                break;
-
-            case OP_PRINT:
-                print((long) bc.value);
-                break;
-
-            case OP_ADD:
-                add();
-                break;
-
-            case OP_NULL:
-            default:
-                fatal("NULL bytecode operator!");
+                case OP_NULL:
+                    fatal("NULL bytecode operator!");
+                default:
+                    fatal("unimplemented bytecode operator!");
+            }
         }
-
-        execute(idx + 1);
     }
 
 protected:
@@ -168,16 +162,40 @@ protected:
     }
 
     void
+    call ()
+    {
+        Data base = registers[REGBASE];
+        Data target = registers[REGCALL];
+        stack.push(Data(PC));
+        stack.push(Data(base.value));
+        PC = target.value;
+        registers[REGBASE] = stack.index();
+    }
+
+    void
+    ret ()
+    {
+        unsigned long floor = registers[REGBASE].value;
+        while (stack.index() > floor)
+            stack.pop();
+        Data base = stack.pop();
+        Data addr = stack.pop();
+        PC = addr.value;
+        registers[REGBASE].value = base.value;
+    }
+
+    void
     add ()
     {
-         Data d1 = stack.pop();
-         Data d2 = stack.pop();
-         stack.push(Data(d1.value + d2.value));
-     }
+        Data d1 = stack.pop();
+        Data d2 = stack.pop();
+        stack.push(Data(d1.value + d2.value));
+    }
 
 protected:
     Stack stack;
     std::vector<Data> registers;
+    unsigned long PC; /* program counter */
 };
 
 #endif

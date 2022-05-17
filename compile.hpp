@@ -13,6 +13,12 @@ struct Definition
     unsigned long index;
     unsigned long length;
 
+    Definition()
+        : name("NULL")
+        , index(0)
+        , length(0)
+    {}
+
     Definition(std::string name, unsigned long index, unsigned long length)
         : name(name)
         , index(index)
@@ -26,6 +32,23 @@ public:
     Compile (Machine& machine)
         : _machine(machine)
     {
+        define("foobar", std::queue<Bytecode>({
+            Bytecode(OP_MOVE, REG1, 1000),
+            Bytecode(OP_MOVE, REG2,  337),
+            Bytecode(OP_PUSH, REG1),
+            Bytecode(OP_PUSH, REG2),
+            Bytecode(OP_ADD),
+            Bytecode(OP_POP, REG1),
+            Bytecode(OP_RET)
+        }));
+
+        define("add", std::queue<Bytecode>({
+            Bytecode(OP_PUSH, REG1),
+            Bytecode(OP_PUSH, REG2),
+            Bytecode(OP_ADD),
+            Bytecode(OP_POP, REG1),
+            Bytecode(OP_RET)
+        }));
     }
 
     std::queue<Bytecode>
@@ -67,10 +90,18 @@ protected:
 private:
     std::map<std::string, Definition> _definitions;
 
-    Definition
+    Definition&
+    findDefinition (std::string name)
+    {
+        return _definitions[name];
+    }
+
+    void
     define (std::string name, std::queue<Bytecode> bc)
     {
-        return Definition(name, _machine.writeReserved(bc), bc.size());
+        auto def = Definition(name, _machine.writeReserved(bc), bc.size());
+        _definitions[name] = def;
+        printf("defined `%s' at %lu\n", name.c_str(), def.index);
     }
 
     /* primitive = <string> | <integer> */
@@ -104,11 +135,10 @@ private:
     void
     expr ()
     {
-        _bytecode.push(Bytecode(OP_MOVE, REG1, 1300));
-        _bytecode.push(Bytecode(OP_MOVE, REG2, 37));
+        auto def = findDefinition("foobar");
+        _bytecode.push(Bytecode(OP_MOVE, REG1, def.index));
+        _bytecode.push(Bytecode(OP_CALL));
         _bytecode.push(Bytecode(OP_PUSH, REG1));
-        _bytecode.push(Bytecode(OP_PUSH, REG2));
-        _bytecode.push(Bytecode(OP_ADD));
         _bytecode.push(Bytecode(OP_PRINT));
         _bytecode.push(Bytecode(OP_HALT));
     }

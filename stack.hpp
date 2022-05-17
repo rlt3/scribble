@@ -50,6 +50,12 @@ public:
     }
 
     void
+    reservedRollback (unsigned long idx)
+    {
+        reserved_idx = idx;
+    }
+
+    void
     pushReserved (Data data)
     {
         if (reserved_idx >= num_reserved)
@@ -93,6 +99,12 @@ public:
         if (stack_idx == num_reserved)
             fatal("Peek: nothing on stack");
         return stack + stack_idx + num - 1;
+    }
+
+    unsigned long
+    index ()
+    {
+        return stack_idx;
     }
 
 protected:

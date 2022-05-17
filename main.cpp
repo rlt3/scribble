@@ -3,7 +3,6 @@
 
 #include "parse.hpp"
 #include "compile.hpp"
-//#include "interpret.hpp"
 #include "machine.hpp"
 
 int
@@ -59,18 +58,6 @@ main (int argc, char **argv)
      *   symbols once they've been compiled.
      */
 
-    //Parse parse(std::cin);
-    //Compile compile;
-    //Interpret interpret;
-
-    //auto tokens = parse.stream();
-    //while (!tokens.empty()) {
-    //    Token token = tokens.front();
-    //    tokens.pop();
-    //    printf("<%s>%s ", token.typestring().c_str(), token.str.c_str());
-    //}
-    //putchar('\n');
-
     Parse parse(std::cin);
     Machine M;
     Compile compile(M);
@@ -78,8 +65,14 @@ main (int argc, char **argv)
     auto tokens = parse.stream();
     auto instructions = compile.tokens(tokens);
 
-    printf("wrote %lu instructions\n", M.writeReserved(instructions));
-    M.execute(0);
+    auto entry = M.writeReserved(instructions);
+    printf("wrote instructions @ %lu\n", entry);
+    M.execute(entry);
+
+    M.rollbackReserved(entry);
+    entry = M.writeReserved(instructions);
+    printf("wrote instructions @ %lu\n", entry);
+    M.execute(entry);
 
     return 0;
 }

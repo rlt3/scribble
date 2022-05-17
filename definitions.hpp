@@ -6,6 +6,8 @@ typedef enum {
     REG1,
     REG2,
     REG3,
+    REGCALL,
+    REGBASE,
     REGCOUNT
 } Register;
 
@@ -20,6 +22,7 @@ typedef enum {
     OP_PRINT,
     OP_ADD,
     OP_CALL,
+    OP_RET,
 } Operator;
 
 void fatal (const char* format, ...);
