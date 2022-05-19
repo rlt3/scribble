@@ -9,6 +9,26 @@
 #include "stack.hpp"
 #include "bytecode.hpp"
 
+struct Definition
+{
+    std::string name;
+    unsigned long index;
+    //unsigned long length;
+
+    Definition()
+        : name("NULL")
+        , index(0)
+     //   , length(0)
+    {}
+
+    //Definition(std::string name, unsigned long index, unsigned long length)
+    Definition(std::string name, unsigned long index)
+        : name(name)
+        , index(index)
+      //  , length(length)
+    {}
+};
+
 class Machine
 {
 public:
@@ -32,19 +52,31 @@ public:
 
     /*
      * Write the given instructions to the machine in the reserved part of the
-     * stack. Returns the idx just after writing the last instruction.
+     * stack and define the entry to those instructions as a function.
      */
-    unsigned long
-    writeReserved (std::queue<Bytecode> instructions)
+    void
+    defineBytecode (std::string name, std::queue<Bytecode> instructions)
     {
-        unsigned long start = stack.reservedTop();
+        unsigned long entry = stack.reservedTop();
 
         while (!instructions.empty()) {
             stack.pushReserved(Data(instructions.front()));
             instructions.pop();
         }
 
-        return start;
+        setDefinition(name, Definition(name, entry));
+    }
+
+    /*
+     * Get the entry point for a symbol.
+     */
+    unsigned long
+    definitionEntry (std::string name)
+    {
+        auto iter = _definitions.find(name);
+        if (iter == _definitions.end())
+            fatal("Cannot call undefined symbol `%s'", name.c_str());
+        return iter->second.index;
     }
 
     /*
@@ -71,19 +103,21 @@ public:
             Data *data = stack.reserved(PC);
             PC++;
 
-            if (!data->isExecutable)
+            if (!data->isExecutable || data->type != DATA_CODE)
                 fatal("Cannot execute non-executable data at index %d", PC);
 
-            Bytecode bc = data->bytecode;
+            Bytecode bc = data->bytecode();
             switch (bc.op) {
-                case OP_HALT:  return;
-                case OP_MOVE:  move(bc.value, bc.reg1); break;
-                case OP_PUSH:  push(bc.reg1); break;
-                case OP_POP:   pop(bc.reg1); break;
-                case OP_PRINT: print((long) bc.value); break;
-                case OP_ADD:   add(); break;
-                case OP_CALL:  call(); break; 
-                case OP_RET:   ret(); break;
+                case OP_HALT:   return;
+                case OP_MOVESTR:  move(bc.data.integer(), bc.reg1); break;
+                case OP_MOVE:   move(bc.data.integer(), bc.reg1); break;
+                case OP_PUSH:   push(bc.reg1); break;
+                case OP_POP:    pop(bc.reg1); break;
+                case OP_PRINT:  print((long) bc.data.integer()); break;
+                case OP_ADD:    add(); break;
+                case OP_CALL:   call(); break; 
+                case OP_RET:    ret(); break;
+                case OP_DEFINE: define(); break;
 
                 case OP_NULL:
                     fatal("NULL bytecode operator!");
@@ -158,7 +192,7 @@ protected:
         Data data = peek(idx);
         if (data.isExecutable)
             fatal("Cannot print executable part of stack!");
-        printf("0x%08lx\n", data.value);
+        printf("0x%08lx\n", data.integer());
     }
 
     void
@@ -167,21 +201,21 @@ protected:
         Data base = registers[REGBASE];
         Data target = registers[REGCALL];
         stack.push(Data(PC));
-        stack.push(Data(base.value));
-        PC = target.value;
+        stack.push(Data(base.integer()));
+        PC = target.integer();
         registers[REGBASE] = stack.index();
     }
 
     void
     ret ()
     {
-        unsigned long floor = registers[REGBASE].value;
+        unsigned long floor = registers[REGBASE].integer();
         while (stack.index() > floor)
             stack.pop();
         Data base = stack.pop();
         Data addr = stack.pop();
-        PC = addr.value;
-        registers[REGBASE].value = base.value;
+        PC = addr.integer();
+        registers[REGBASE] = Data(base.integer());
     }
 
     void
@@ -189,13 +223,36 @@ protected:
     {
         Data d1 = stack.pop();
         Data d2 = stack.pop();
-        stack.push(Data(d1.value + d2.value));
+        stack.push(Data(d1.integer() + d2.integer()));
+    }
+
+    /* define the instructions on the stack as a symbol to be used later */
+    void
+    define ()
+    {
+        auto var1 = reg(REG1);
+        auto var2 = reg(REG2);
+        assert(var1.type == DATA_STR);
+        assert(var2.type == DATA_INTEGER);
+        auto name = var1.string();
+        auto entry = var2.integer();
+
+        setDefinition(name, Definition(name, entry));
     }
 
 protected:
     Stack stack;
     std::vector<Data> registers;
     unsigned long PC; /* program counter */
+
+    std::map<std::string, Definition> _definitions;
+
+    void
+    setDefinition (std::string name, Definition def)
+    {
+        _definitions[name] = def;
+        printf("defined `%s' at %lu\n", name.c_str(), def.index);
+    }
 };
 
 #endif

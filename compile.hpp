@@ -7,25 +7,6 @@
 #include "bytecode.hpp"
 #include "machine.hpp"
 
-struct Definition
-{
-    std::string name;
-    unsigned long index;
-    unsigned long length;
-
-    Definition()
-        : name("NULL")
-        , index(0)
-        , length(0)
-    {}
-
-    Definition(std::string name, unsigned long index, unsigned long length)
-        : name(name)
-        , index(index)
-        , length(length)
-    {}
-};
-
 class Compile
 {
 public:
@@ -88,20 +69,12 @@ protected:
     }
 
 private:
-    std::map<std::string, Definition> _definitions;
-
-    Definition&
-    findDefinition (std::string name)
-    {
-        return _definitions[name];
-    }
-
     void
     define (std::string name, std::queue<Bytecode> bc)
     {
-        auto def = Definition(name, _machine.writeReserved(bc), bc.size());
-        _definitions[name] = def;
-        printf("defined `%s' at %lu\n", name.c_str(), def.index);
+        _machine.defineBytecode(name, bc);
+        unsigned long entry = _machine.definitionEntry(name);
+        printf("defined `%s' at %lu\n", name.c_str(), entry);
     }
 
     /* primitive = <string> | <integer> */
@@ -122,21 +95,15 @@ private:
     {
         Token tkn = next();
         assert(tkn.type == TKN_SYMBOL);
-
-        auto iter = _definitions.find(tkn.str);
-        if (iter == _definitions.end())
-            fatal("Cannot call undefined symbol `%s'", tkn.str.c_str());
-
-        Definition& def = iter->second;
-        _bytecode.push(Bytecode(OP_CALL, def.index));
+        _bytecode.push(Bytecode(OP_CALL, _machine.definitionEntry(tkn.str)));
     }
 
     /* expr = <call> | <primitive> */
     void
     expr ()
     {
-        auto def = findDefinition("foobar");
-        _bytecode.push(Bytecode(OP_MOVE, REG1, def.index));
+        auto entry = _machine.definitionEntry("foobar");
+        _bytecode.push(Bytecode(OP_MOVE, REG1, entry));
         _bytecode.push(Bytecode(OP_CALL));
         _bytecode.push(Bytecode(OP_PUSH, REG1));
         _bytecode.push(Bytecode(OP_PRINT));

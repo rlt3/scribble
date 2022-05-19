@@ -23,6 +23,8 @@ typedef enum {
     OP_ADD,
     OP_CALL,
     OP_RET,
+    OP_DEFINE,
+    OP_MOVESTR,
 } Operator;
 
 void fatal (const char* format, ...);

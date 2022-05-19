@@ -62,17 +62,36 @@ main (int argc, char **argv)
     Machine M;
     Compile compile(M);
 
-    auto tokens = parse.stream();
-    auto instructions = compile.tokens(tokens);
+    //auto tokens = parse.stream();
+    //auto instructions = compile.tokens(tokens);
+    //M.defineBytecode("repl", instructions);
+    //M.execute(M.definitionEntry("repl"));
 
-    auto entry = M.writeReserved(instructions);
-    printf("wrote instructions @ %lu\n", entry);
-    M.execute(entry);
+    //M.defineBytecode("repl", std::queue<Bytecode>({
+    //    Bytecode(OP_MOVE, REG1, "leroy"),
+    //    Bytecode(OP_MOVE, REG2, 2),
+    //    Bytecode(OP_DEFINE),
+    //    Bytecode(OP_HALT),
+    //    Bytecode(OP_MOVE, REG1, "im a string"),
+    //    Bytecode(OP_PUSH, REG1),
+    //    Bytecode(OP_PRINT),
+    //    Bytecode(OP_RET)
+    //}));
+    //M.execute(M.definitionEntry("repl"));
 
-    M.rollbackReserved(entry);
-    entry = M.writeReserved(instructions);
-    printf("wrote instructions @ %lu\n", entry);
-    M.execute(entry);
+    //M.defineBytecode("repl", std::queue<Bytecode>({
+    //    Bytecode(OP_MOVE, REG1, M.definitionEntry("leroy")),
+    //    Bytecode(OP_CALL),
+    //    Bytecode(OP_HALT)
+    //}));
+
+    //M.defineBytecode("repl", std::queue<Bytecode>({
+    //    Bytecode(OP_MOVE, REG1, "leroy"),
+    //    Bytecode(OP_PUSH, REG1),
+    //    Bytecode(OP_PRINT),
+    //    Bytecode(OP_HALT)
+    //}));
+    //M.execute(M.definitionEntry("repl"));
 
     return 0;
 }

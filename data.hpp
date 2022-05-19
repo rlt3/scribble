@@ -1,35 +1,51 @@
 #ifndef SCRIBBLE_DATA
 #define SCRIBBLE_DATA
 
-#include "bytecode.hpp"
+#include <string>
+
+struct Bytecode;
+struct Payload;
+
+typedef enum {
+    DATA_NULL,
+    DATA_STR,
+    DATA_CODE,
+    DATA_INTEGER,
+} DataType;
+
+struct Payload
+{
+    std::string str;
+    unsigned long value;
+    Bytecode bytecode;
+
+    Payload (std::string s) : str(s) {}
+    Payload (unsigned long v) : value(v) {}
+    Payload (Bytecode bc) : bytecode(bc) {}
+};
 
 /*
  * Represents a Word of memory on the stack. But since we have a runtime, we
  * can include stuff like type information.
  */
-struct Data
+class Data
 {
+public:
+    DataType type;
     bool isExecutable;
-    unsigned long value;
-    Bytecode bytecode;
 
-    Data ()
-        : isExecutable(false)
-        , value(0)
-        , bytecode(Bytecode())
-    {}
+    Data ();
+    ~Data ();
+    Data (Bytecode bytecode);
+    Data (unsigned long value);
+    Data (std::string str);
 
-    Data (Bytecode bytecode)
-        : isExecutable(true)
-        , value(0)
-        , bytecode(bytecode)
-    {}
+    unsigned long integer();
+    Bytecode bytecode();
+    std::string string();
 
-    Data (unsigned long value)
-        : isExecutable(false)
-        , value(value)
-        , bytecode(Bytecode())
-    {}
+protected:
+    Payload payload;
 };
 
 #endif
