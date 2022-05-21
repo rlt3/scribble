@@ -62,47 +62,39 @@ main (int argc, char **argv)
     Machine M;
     Compile compile(M);
 
-    //auto tokens = parse.stream();
-    //auto instructions = compile.tokens(tokens);
-    //M.defineBytecode("repl", instructions);
-    //M.execute(M.definitionEntry("repl"));
+#define REPL "::repl::"
 
-    //M.defineBytecode("repl", std::queue<Bytecode>({
-    //    Bytecode(OP_MOVE, REG1, "leroy"),
-    //    Bytecode(OP_MOVE, REG2, 2),
-    //    Bytecode(OP_DEFINE),
-    //    Bytecode(OP_HALT),
-    //    Bytecode(OP_MOVE, REG1, "im a string"),
-    //    Bytecode(OP_PUSH, REG1),
-    //    Bytecode(OP_PRINT),
-    //    Bytecode(OP_RET)
-    //}));
-    //M.execute(M.definitionEntry("repl"));
+    M.defineBytecode(REPL, std::queue<Bytecode>({
+        Bytecode(OP_DEFINE, Primitive("leroy")),
+        Bytecode(OP_MOVESTR, REG1, Primitive("leroy")),
+        Bytecode(OP_PUSH, REG1),
+        Bytecode(OP_PRINT),
+        Bytecode(OP_RET)
+    }));
+    M.execute(REPL);
 
-    //M.defineBytecode("repl", std::queue<Bytecode>({
-    //    Bytecode(OP_MOVE, REG1, M.definitionEntry("leroy")),
-    //    Bytecode(OP_CALL),
-    //    Bytecode(OP_HALT)
-    //}));
+    M.defineBytecode(REPL, std::queue<Bytecode>({
+        Bytecode(OP_CALL, Primitive(M.definitionEntry("leroy"))),
+        Bytecode(OP_HALT)
+    }));
+    M.execute(REPL);
 
-    //M.defineBytecode("repl", std::queue<Bytecode>({
-    //    Bytecode(OP_MOVESTR, REG1, Primitive("leroy")),
-    //    Bytecode(OP_PUSH, REG1),
-    //    Bytecode(OP_PRINT),
-    //    Bytecode(OP_HALT)
-    //}));
-    //M.execute(M.definitionEntry("repl"));
-
-    M.defineBytecode("repl", std::queue<Bytecode>({
+    M.defineBytecode(REPL, std::queue<Bytecode>({
+        Bytecode(OP_DEFINE, Primitive("leet")),
         Bytecode(OP_MOVE, REG1, Primitive(1000)),
         Bytecode(OP_MOVE, REG2, Primitive(337)),
         Bytecode(OP_PUSH, REG1),
         Bytecode(OP_PUSH, REG2),
         Bytecode(OP_ADD),
         Bytecode(OP_PRINT),
-        Bytecode(OP_HALT)
+        Bytecode(OP_RET)
     }));
-    M.execute(M.definitionEntry("repl"));
+    M.execute(REPL);
+
+    auto tokens = parse.stream();
+    auto instructions = compile.tokens(tokens);
+    M.defineBytecode(REPL, instructions);
+    M.execute(REPL);
 
     return 0;
 }

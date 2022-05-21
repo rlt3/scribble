@@ -62,7 +62,7 @@ public:
             instructions.pop();
         }
 
-        setProcedure(name, Procedure(name, entry));
+        setProcedure(name, entry);
     }
 
     /*
@@ -75,7 +75,6 @@ public:
         if (iter == _definitions.end())
             fatal("Cannot call undefined symbol `%s'", name.c_str());
         return iter->second.index;
-        return 0;
     }
 
     /*
@@ -93,9 +92,9 @@ public:
      * bottom and moving up.
      */
     void
-    execute (unsigned long entry_point)
+    execute (std::string name)
     {
-        PC = entry_point;
+        PC = definitionEntry(name);
         registers[REGBASE] = stack.index();
 
         while (true) {
@@ -107,16 +106,44 @@ public:
 
             Bytecode bc = data->bytecode();
             switch (bc.op) {
-                case OP_HALT:   return;
-                case OP_MOVESTR:  move(bc.primitive, bc.reg1); break;
-                case OP_MOVE:   move(bc.primitive, bc.reg1); break;
-                case OP_PUSH:   push(bc.reg1); break;
-                case OP_POP:    pop(bc.reg1); break;
-                case OP_PRINT:  print(); break;
-                case OP_ADD:    add(); break;
-                case OP_CALL:   call(); break; 
-                case OP_RET:    ret(); break;
-                case OP_DEFINE: define(); break;
+
+                /* define always halts after defining an expression */
+                case OP_DEFINE:
+                    define(bc.primitive);
+                case OP_HALT:
+                    return;
+
+                case OP_MOVESTR:
+                    move(bc.primitive, bc.reg1);
+                    break;
+
+                case OP_MOVE:
+                    move(bc.primitive, bc.reg1);
+                    break;
+
+                case OP_PUSH:
+                    push(bc.reg1);
+                    break;
+
+                case OP_POP:
+                    pop(bc.reg1);
+                    break;
+
+                case OP_PRINT:
+                    print();
+                    break;
+
+                case OP_ADD:
+                    add();
+                    break;
+
+                case OP_CALL:
+                    call(bc.primitive);
+                    break; 
+
+                case OP_RET:
+                    ret();
+                    break;
 
                 case OP_NULL:
                     fatal("NULL bytecode operator!");
@@ -164,9 +191,9 @@ protected:
 
     /* push a register's value onto the stack */
     void
-    push (Register reg)
+    push (Register r)
     {
-        stack.push(registers[reg]);
+        stack.push(reg(r));
     }
 
     /* pop from the stack into a register */
@@ -186,21 +213,29 @@ protected:
         data.primitive().print();
     }
 
+    /*
+     * Call a procedure by jumping to the given index.
+     * REGBASE is just the base pointer. This pushes both the return pointer
+     * (current PC) and the current REGBASE.
+     */
     void
-    call ()
+    call (Primitive index)
     {
-        Data base = registers[REGBASE];
-        Data target = registers[REGCALL];
+        Data base = reg(REGBASE);
         stack.push(Data(PC));
         stack.push(base);
-        PC = target.primitive().integer();
+        PC = index.integer();
         registers[REGBASE] = Data(stack.index());
     }
 
+    /*
+     * Pops everything off the stack until hitting REGBASE. Pops off the return
+     * pointer and old REGBASE.
+     */
     void
     ret ()
     {
-        unsigned long floor = registers[REGBASE].primitive().integer();
+        unsigned long floor = reg(REGBASE).primitive().integer();
         while (stack.index() > floor)
             stack.pop();
         Data base = stack.pop();
@@ -217,18 +252,16 @@ protected:
         stack.push(Data(d1.primitive().integer() + d2.primitive().integer()));
     }
 
-    /* define the instructions on the stack as a symbol to be used later */
+    /*
+     * Define the instructions on the stack as a symbol to be used later.
+     * Because the instructions are compiled first and placed on the stack to
+     * be interpreted, we can just save that location. This sets a procedure
+     * to the very next instruction after `define'.
+     */
     void
-    define ()
+    define (Primitive prm)
     {
-        //auto var1 = reg(REG1);
-        //auto var2 = reg(REG2);
-        //assert(var1.type == DATA_STR);
-        //assert(var2.type == DATA_INTEGER);
-        //auto name = var1.string();
-        //auto entry = var2.integer();
-
-        //setProcedure(name, Procedure(name, entry));
+        setProcedure(prm.string(), PC);
     }
 
 protected:
@@ -239,10 +272,10 @@ protected:
     std::map<std::string, Procedure> _definitions;
 
     void
-    setProcedure (std::string name, Procedure def)
+    setProcedure (std::string name, unsigned long entry)
     {
-        _definitions[name] = def;
-        printf("| defined `%s' at %lu\n", name.c_str(), def.index);
+        _definitions[name] = Procedure(name, entry);
+        printf("| defined `%s' at %lu\n", name.c_str(), entry);
     }
 };
 

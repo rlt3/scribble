@@ -13,16 +13,6 @@ public:
     Compile (Machine& machine)
         : _machine(machine)
     {
-        //define("foobar", std::queue<Bytecode>({
-        //    Bytecode(OP_MOVE, REG1, 1000),
-        //    Bytecode(OP_MOVE, REG2,  337),
-        //    Bytecode(OP_PUSH, REG1),
-        //    Bytecode(OP_PUSH, REG2),
-        //    Bytecode(OP_ADD),
-        //    Bytecode(OP_POP, REG1),
-        //    Bytecode(OP_RET)
-        //}));
-
         //define("add", std::queue<Bytecode>({
         //    Bytecode(OP_PUSH, REG1),
         //    Bytecode(OP_PUSH, REG2),
@@ -100,11 +90,8 @@ private:
     void
     expr ()
     {
-        auto entry = _machine.definitionEntry("foobar");
-        _bytecode.push(Bytecode(OP_MOVE, REG1, entry));
-        _bytecode.push(Bytecode(OP_CALL));
-        _bytecode.push(Bytecode(OP_PUSH, REG1));
-        _bytecode.push(Bytecode(OP_PRINT));
+        auto entry = Primitive(_machine.definitionEntry("leet"));
+        _bytecode.push(Bytecode(OP_CALL, entry));
         _bytecode.push(Bytecode(OP_HALT));
     }
 };
