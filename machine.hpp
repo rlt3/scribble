@@ -66,18 +66,6 @@ public:
     }
 
     /*
-     * Get the entry point for a symbol.
-     */
-    unsigned long
-    definitionEntry (std::string name)
-    {
-        auto iter = _definitions.find(name);
-        if (iter == _definitions.end())
-            fatal("Cannot call undefined symbol `%s'", name.c_str());
-        return iter->second.index;
-    }
-
-    /*
      * Roll back the stack index for the reserved section. This lets us
      * overwrite definitions. This is useful for executing REPL commands.
      */
@@ -94,7 +82,7 @@ public:
     void
     execute (std::string name)
     {
-        PC = definitionEntry(name);
+        PC = procedureEntry(name);
         registers[REGBASE] = stack.index();
 
         while (true) {
@@ -214,17 +202,17 @@ protected:
     }
 
     /*
-     * Call a procedure by jumping to the given index.
-     * REGBASE is just the base pointer. This pushes both the return pointer
-     * (current PC) and the current REGBASE.
+     * Call a procedure by looking up the symbol's entry point and jumping to
+     * it.  REGBASE is just the base pointer. This pushes both the return
+     * pointer (current PC) and the current REGBASE.
      */
     void
-    call (Primitive index)
+    call (Primitive symbol)
     {
         Data base = reg(REGBASE);
         stack.push(Data(PC));
         stack.push(base);
-        PC = index.integer();
+        PC = procedureEntry(symbol.string());
         registers[REGBASE] = Data(stack.index());
     }
 
@@ -277,6 +265,19 @@ protected:
         _definitions[name] = Procedure(name, entry);
         printf("| defined `%s' at %lu\n", name.c_str(), entry);
     }
+
+    /*
+     * Get the entry point for a symbol.
+     */
+    unsigned long
+    procedureEntry (std::string name)
+    {
+        auto iter = _definitions.find(name);
+        if (iter == _definitions.end())
+            fatal("Cannot call undefined symbol `%s'", name.c_str());
+        return iter->second.index;
+    }
+
 };
 
 #endif

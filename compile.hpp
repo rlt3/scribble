@@ -52,6 +52,15 @@ protected:
         return t;
     }
 
+    Token
+    expect (TokenType type)
+    {
+        Token t = next();
+        if (t.type != type)
+            fatal("Unexpected token type!");
+        return t;
+    }
+
     bool
     eof ()
     {
@@ -77,20 +86,21 @@ private:
         _bytecode.push(Bytecode(OP_PUSH, REG1));
     }
 
-    /* call = <symbol> | <symbol>([ <expr> ]*) */
+    /* call = <symbol>([ <expr> ]*) */
     void
     call ()
     {
-        Token tkn = next();
-        assert(tkn.type == TKN_SYMBOL);
-        _bytecode.push(Bytecode(OP_CALL, _machine.definitionEntry(tkn.str)));
+        Token tkn = expect(TKN_SYMBOL);
+        expect(TKN_LPAREN);
+
+        //_bytecode.push(Bytecode(OP_CALL, _machine.definitionEntry(tkn.str)));
     }
 
-    /* expr = <call> | <primitive> */
+    /* expr = <symbol> | <call> | <primitive> */
     void
     expr ()
     {
-        auto entry = Primitive(_machine.definitionEntry("leet"));
+        auto entry = Primitive("leet");
         _bytecode.push(Bytecode(OP_CALL, entry));
         _bytecode.push(Bytecode(OP_HALT));
     }

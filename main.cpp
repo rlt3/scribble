@@ -74,7 +74,7 @@ main (int argc, char **argv)
     M.execute(REPL);
 
     M.defineBytecode(REPL, std::queue<Bytecode>({
-        Bytecode(OP_CALL, Primitive(M.definitionEntry("leroy"))),
+        Bytecode(OP_CALL, Primitive("leroy")),
         Bytecode(OP_HALT)
     }));
     M.execute(REPL);
