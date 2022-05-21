@@ -13,23 +13,23 @@ public:
     Compile (Machine& machine)
         : _machine(machine)
     {
-        define("foobar", std::queue<Bytecode>({
-            Bytecode(OP_MOVE, REG1, 1000),
-            Bytecode(OP_MOVE, REG2,  337),
-            Bytecode(OP_PUSH, REG1),
-            Bytecode(OP_PUSH, REG2),
-            Bytecode(OP_ADD),
-            Bytecode(OP_POP, REG1),
-            Bytecode(OP_RET)
-        }));
+        //define("foobar", std::queue<Bytecode>({
+        //    Bytecode(OP_MOVE, REG1, 1000),
+        //    Bytecode(OP_MOVE, REG2,  337),
+        //    Bytecode(OP_PUSH, REG1),
+        //    Bytecode(OP_PUSH, REG2),
+        //    Bytecode(OP_ADD),
+        //    Bytecode(OP_POP, REG1),
+        //    Bytecode(OP_RET)
+        //}));
 
-        define("add", std::queue<Bytecode>({
-            Bytecode(OP_PUSH, REG1),
-            Bytecode(OP_PUSH, REG2),
-            Bytecode(OP_ADD),
-            Bytecode(OP_POP, REG1),
-            Bytecode(OP_RET)
-        }));
+        //define("add", std::queue<Bytecode>({
+        //    Bytecode(OP_PUSH, REG1),
+        //    Bytecode(OP_PUSH, REG2),
+        //    Bytecode(OP_ADD),
+        //    Bytecode(OP_POP, REG1),
+        //    Bytecode(OP_RET)
+        //}));
     }
 
     std::queue<Bytecode>
@@ -73,8 +73,6 @@ private:
     define (std::string name, std::queue<Bytecode> bc)
     {
         _machine.defineBytecode(name, bc);
-        unsigned long entry = _machine.definitionEntry(name);
-        printf("defined `%s' at %lu\n", name.c_str(), entry);
     }
 
     /* primitive = <string> | <integer> */
@@ -85,7 +83,7 @@ private:
             fatal("Unimplemented primitive value!");
 
         Token tkn = next();
-        _bytecode.push(Bytecode(OP_MOVE, REG1, tkn.toUInt()));
+        _bytecode.push(Bytecode(OP_MOVE, REG1, tkn.toPrimitive()));
         _bytecode.push(Bytecode(OP_PUSH, REG1));
     }
 

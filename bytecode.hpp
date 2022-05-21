@@ -2,62 +2,55 @@
 #define SCRIBBLE_BYTECODE
 
 #include "definitions.hpp"
-#include "data.hpp"
+#include "primitive.hpp"
 
 struct Bytecode
 {
     Operator op;
     Register reg1;
     Register reg2;
-    Data data;
+    Primitive primitive;
 
     Bytecode ()
         : op(OP_NULL)
         , reg1(REG1)
         , reg2(REG2)
-        , data(Data(0))
+        , primitive(Primitive())
     {}
 
-    Bytecode (Operator op, Register r1, Register r2, unsigned long value)
+    Bytecode (Operator op, Register r1, Register r2, Primitive primitive)
         : op(op)
         , reg1(r1)
         , reg2(r2)
-        , data(Data(value))
+        , primitive(primitive)
     {}
 
-    Bytecode (Operator op, Register r1, unsigned long value)
+    Bytecode (Operator op, Register r1, Primitive primitive)
         : op(op)
         , reg1(r1)
         , reg2(REGNULL)
-        , data(Data(value))
-    {}
-
-    Bytecode (Operator op, Register r1, std::string str)
-        : op(op)
-        , reg1(r1)
-        , reg2(REGNULL)
-        , data(Data(str))
+        , primitive(primitive)
     {}
 
     Bytecode (Operator op, Register r1)
         : op(op)
         , reg1(r1)
         , reg2(REGNULL)
-        , data(Data(0))
+        , primitive(Primitive())
     {}
 
-    Bytecode (Operator op, unsigned long val)
+    Bytecode (Operator op, Primitive primitive)
         : op(op)
         , reg1(REGNULL)
         , reg2(REGNULL)
-        , data(Data(val))
+        , primitive(primitive)
     {}
 
     Bytecode (Operator op)
         : op(op)
         , reg1(REGNULL)
         , reg2(REGNULL)
-        , data(Data(0))
+        , primitive(Primitive())
     {}
 };
 

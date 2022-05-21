@@ -1,6 +1,9 @@
 #ifndef SCRIBBLE_TOKEN
 #define SCRIBBLE_TOKEN
 
+#include "error.hpp"
+#include "primitive.hpp"
+
 typedef enum {
     TKN_INVALID,
     TKN_STRING,
@@ -35,16 +38,15 @@ struct Token
     {
     }
 
-    signed long
-    toInt ()
+    Primitive
+    toPrimitive ()
     {
-        return std::stol(str);
-    }
-
-    unsigned long
-    toUInt ()
-    {
-        return std::stoul(str);
+        switch (type) {
+            case TKN_STRING:  return Primitive(str);
+            case TKN_INTEGER: return Primitive(std::stoul(str));
+            default:
+                fatal("Unimplemented token -> primitive conversion! `%d'", type);
+        }
     }
 
     std::string

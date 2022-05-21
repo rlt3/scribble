@@ -2,8 +2,8 @@
 #include <cstdlib>
 
 #include "parse.hpp"
-#include "compile.hpp"
 #include "machine.hpp"
+#include "compile.hpp"
 
 int
 main (int argc, char **argv)
@@ -86,12 +86,23 @@ main (int argc, char **argv)
     //}));
 
     //M.defineBytecode("repl", std::queue<Bytecode>({
-    //    Bytecode(OP_MOVE, REG1, "leroy"),
+    //    Bytecode(OP_MOVESTR, REG1, Primitive("leroy")),
     //    Bytecode(OP_PUSH, REG1),
     //    Bytecode(OP_PRINT),
     //    Bytecode(OP_HALT)
     //}));
     //M.execute(M.definitionEntry("repl"));
+
+    M.defineBytecode("repl", std::queue<Bytecode>({
+        Bytecode(OP_MOVE, REG1, Primitive(1000)),
+        Bytecode(OP_MOVE, REG2, Primitive(337)),
+        Bytecode(OP_PUSH, REG1),
+        Bytecode(OP_PUSH, REG2),
+        Bytecode(OP_ADD),
+        Bytecode(OP_PRINT),
+        Bytecode(OP_HALT)
+    }));
+    M.execute(M.definitionEntry("repl"));
 
     return 0;
 }

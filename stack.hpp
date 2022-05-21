@@ -1,8 +1,9 @@
 #ifndef SCRIBBLE_STACK
+#define SCRIBBLE_STACK
 
 #include <assert.h>
 #include "data.hpp"
-#include "definitions.hpp"
+#include "error.hpp"
 
 /*
  * Byte-addressable stack implementation.
@@ -44,23 +45,23 @@ public:
     }
 
     unsigned long
-    reservedTop ()
+    reserveIndex ()
     {
         return reserved_idx;
     }
 
     void
-    reservedRollback (unsigned long idx)
+    reserveRollback (unsigned long idx)
     {
         reserved_idx = idx;
     }
 
     void
-    pushReserved (Data data)
+    reservePush (Data data)
     {
         if (reserved_idx >= num_reserved)
             fatal("PushReserved: stack overflow");
-        stack[reserved_idx] = data;
+        stack[reserved_idx].assign(data);
         reserved_idx++;
     }
 
@@ -75,7 +76,7 @@ public:
         */
         if (stack_idx >= stack_size)
             fatal("Push: stack overflow");
-        stack[stack_idx] = data;
+        stack[stack_idx].assign(data);
         stack_idx++;
     }
 
@@ -85,20 +86,19 @@ public:
         if (stack_idx == num_reserved)
             fatal("Pop: stack underflow");
         stack_idx--;
-        Data data = stack[stack_idx];
-        return data;
+        return stack[stack_idx];
     }
 
     /*
      * From the top of the stack, relatively address to peek values. The
      * argument should be in the range (-inf, 0]
      */
-    Data*
+    Data
     peek (signed long num)
     {
         if (stack_idx == num_reserved)
             fatal("Peek: nothing on stack");
-        return stack + stack_idx + num - 1;
+        return stack[stack_idx + num - 1];
     }
 
     unsigned long

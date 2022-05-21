@@ -1,7 +1,9 @@
+#ifndef SCRIBBLE_ERROR
+#define SCRIBBLE_ERROR
+
 #include <cstdio>
 #include <cstdlib>
 #include <stdarg.h>
-#include "definitions.hpp"
 
 void
 fatal (const char* format, ...)
@@ -13,3 +15,6 @@ fatal (const char* format, ...)
     fputs("\n", stderr);
     exit(1);
 }
+
+
+#endif

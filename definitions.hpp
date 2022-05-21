@@ -27,6 +27,4 @@ typedef enum {
     OP_MOVESTR,
 } Operator;
 
-void fatal (const char* format, ...);
-
 #endif

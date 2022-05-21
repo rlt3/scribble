@@ -3,29 +3,25 @@
 
 #include <vector>
 #include <queue>
+#include <map>
 
 #include "definitions.hpp"
-#include "data.hpp"
+#include "error.hpp"
 #include "stack.hpp"
-#include "bytecode.hpp"
 
-struct Definition
+struct Procedure
 {
     std::string name;
     unsigned long index;
-    //unsigned long length;
 
-    Definition()
+    Procedure()
         : name("NULL")
         , index(0)
-     //   , length(0)
     {}
 
-    //Definition(std::string name, unsigned long index, unsigned long length)
-    Definition(std::string name, unsigned long index)
+    Procedure(std::string name, unsigned long index)
         : name(name)
         , index(index)
-      //  , length(length)
     {}
 };
 
@@ -47,7 +43,7 @@ public:
     Data
     peek (unsigned idx)
     {
-        return *stack.peek(0);
+        return stack.peek(0);
     }
 
     /*
@@ -57,14 +53,16 @@ public:
     void
     defineBytecode (std::string name, std::queue<Bytecode> instructions)
     {
-        unsigned long entry = stack.reservedTop();
+        unsigned long entry = stack.reserveIndex();
+        Data data;
 
         while (!instructions.empty()) {
-            stack.pushReserved(Data(instructions.front()));
+            data.assign(instructions.front());
+            stack.reservePush(data);
             instructions.pop();
         }
 
-        setDefinition(name, Definition(name, entry));
+        setProcedure(name, Procedure(name, entry));
     }
 
     /*
@@ -77,6 +75,7 @@ public:
         if (iter == _definitions.end())
             fatal("Cannot call undefined symbol `%s'", name.c_str());
         return iter->second.index;
+        return 0;
     }
 
     /*
@@ -86,7 +85,7 @@ public:
     void
     rollbackReserved (unsigned long idx)
     {
-        stack.reservedRollback(idx);
+        stack.reserveRollback(idx);
     }
 
     /*
@@ -103,17 +102,17 @@ public:
             Data *data = stack.reserved(PC);
             PC++;
 
-            if (!data->isExecutable || data->type != DATA_CODE)
+            if (!data->isExecutable())
                 fatal("Cannot execute non-executable data at index %d", PC);
 
             Bytecode bc = data->bytecode();
             switch (bc.op) {
                 case OP_HALT:   return;
-                case OP_MOVESTR:  move(bc.data.integer(), bc.reg1); break;
-                case OP_MOVE:   move(bc.data.integer(), bc.reg1); break;
+                case OP_MOVESTR:  move(bc.primitive, bc.reg1); break;
+                case OP_MOVE:   move(bc.primitive, bc.reg1); break;
                 case OP_PUSH:   push(bc.reg1); break;
                 case OP_POP:    pop(bc.reg1); break;
-                case OP_PRINT:  print((long) bc.data.integer()); break;
+                case OP_PRINT:  print(); break;
                 case OP_ADD:    add(); break;
                 case OP_CALL:   call(); break; 
                 case OP_RET:    ret(); break;
@@ -135,15 +134,9 @@ protected:
 
     /* move an immediate value into a register */
     void
-    move (unsigned long data, Register reg)
+    move (Primitive primitive, Register reg)
     {
-        move((Data) data, reg);
-    }
-
-    void
-    move (Data data, Register reg)
-    {
-        registers[reg] = data;
+        registers[reg].assign(primitive);
     }
 
     /* 
@@ -157,7 +150,6 @@ protected:
     pointer (signed num, Register reg)
     {
         fatal("TODO pointer");
-        //registers[reg] = (Data) stack.peek(num);
     }
 
     /*
@@ -168,7 +160,6 @@ protected:
     load (signed num, Register reg)
     {
         fatal("TODO load");
-        //registers[reg] = (Data) stack.peek(num);
     }
 
     /* push a register's value onto the stack */
@@ -187,12 +178,12 @@ protected:
 
     /* print the value at the given stack index as hex */
     void
-    print (long idx)
+    print ()
     {
-        Data data = peek(idx);
-        if (data.isExecutable)
+        Data data = stack.peek(0);
+        if (data.isExecutable())
             fatal("Cannot print executable part of stack!");
-        printf("0x%08lx\n", data.integer());
+        data.primitive().print();
     }
 
     void
@@ -201,21 +192,21 @@ protected:
         Data base = registers[REGBASE];
         Data target = registers[REGCALL];
         stack.push(Data(PC));
-        stack.push(Data(base.integer()));
-        PC = target.integer();
-        registers[REGBASE] = stack.index();
+        stack.push(base);
+        PC = target.primitive().integer();
+        registers[REGBASE] = Data(stack.index());
     }
 
     void
     ret ()
     {
-        unsigned long floor = registers[REGBASE].integer();
+        unsigned long floor = registers[REGBASE].primitive().integer();
         while (stack.index() > floor)
             stack.pop();
         Data base = stack.pop();
         Data addr = stack.pop();
-        PC = addr.integer();
-        registers[REGBASE] = Data(base.integer());
+        PC = addr.primitive().integer();
+        registers[REGBASE] = base.primitive().integer();
     }
 
     void
@@ -223,21 +214,21 @@ protected:
     {
         Data d1 = stack.pop();
         Data d2 = stack.pop();
-        stack.push(Data(d1.integer() + d2.integer()));
+        stack.push(Data(d1.primitive().integer() + d2.primitive().integer()));
     }
 
     /* define the instructions on the stack as a symbol to be used later */
     void
     define ()
     {
-        auto var1 = reg(REG1);
-        auto var2 = reg(REG2);
-        assert(var1.type == DATA_STR);
-        assert(var2.type == DATA_INTEGER);
-        auto name = var1.string();
-        auto entry = var2.integer();
+        //auto var1 = reg(REG1);
+        //auto var2 = reg(REG2);
+        //assert(var1.type == DATA_STR);
+        //assert(var2.type == DATA_INTEGER);
+        //auto name = var1.string();
+        //auto entry = var2.integer();
 
-        setDefinition(name, Definition(name, entry));
+        //setProcedure(name, Procedure(name, entry));
     }
 
 protected:
@@ -245,13 +236,13 @@ protected:
     std::vector<Data> registers;
     unsigned long PC; /* program counter */
 
-    std::map<std::string, Definition> _definitions;
+    std::map<std::string, Procedure> _definitions;
 
     void
-    setDefinition (std::string name, Definition def)
+    setProcedure (std::string name, Procedure def)
     {
         _definitions[name] = def;
-        printf("defined `%s' at %lu\n", name.c_str(), def.index);
+        printf("| defined `%s' at %lu\n", name.c_str(), def.index);
     }
 };
 
