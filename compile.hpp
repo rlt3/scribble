@@ -74,16 +74,32 @@ private:
         _machine.defineBytecode(name, bc);
     }
 
+    void
+    integer ()
+    {
+        assert(peek().type == TKN_INTEGER);
+        Token tkn = next();
+        _bytecode.push(Bytecode(OP_MOVESTR, REG1, tkn.toPrimitive()));
+        _bytecode.push(Bytecode(OP_PUSH, REG1));
+    }
+
+    void
+    string ()
+    {
+        assert(peek().type == TKN_STRING);
+        Token tkn = next();
+        _bytecode.push(Bytecode(OP_MOVE, REG1, tkn.toPrimitive()));
+        _bytecode.push(Bytecode(OP_PUSH, REG1));
+    }
+
     /* primitive = <string> | <integer> */
     void
     primitive ()
     {
-        if (peek().type != TKN_INTEGER)
-            fatal("Unimplemented primitive value!");
-
-        Token tkn = next();
-        _bytecode.push(Bytecode(OP_MOVE, REG1, tkn.toPrimitive()));
-        _bytecode.push(Bytecode(OP_PUSH, REG1));
+        if (peek().type == TKN_STRING)
+            return string();
+        else
+            return integer();
     }
 
     /* call = <symbol>([ <expr> ]*) */
@@ -100,10 +116,78 @@ private:
     void
     expr ()
     {
-        auto entry = Primitive("leet");
-        _bytecode.push(Bytecode(OP_CALL, entry));
-        _bytecode.push(Bytecode(OP_HALT));
+        if (peek().type == TKN_SYMBOL) {
+            Token sym = next();
+            if (peek().type == TKN_LPAREN) {
+                call();
+                return;
+            }
+            /* <symbol> */
+            return;
+        }
+
+        primitive();
+
+        //auto entry = Primitive("leet");
+        //_bytecode.push(Bytecode(OP_CALL, entry));
+        //_bytecode.push(Bytecode(OP_HALT));
     }
 };
+
+/*
+ * <integer> := [0-9]+
+ * <string> := "[A-Za-z0-9 ]*"
+ * <symbol> := [A-Za-z]+[0-9]*
+ * <primitive> := <string> | <integer>
+ * <ancestor> := push | pop | define | print | add ; etc.
+ * <call> := <symbol>([<expr> ]*)
+ * <list> := ([<expr> ]*)
+ * <expr> := <ancestor> | <symbol> | <call> | <list> | <primitive>
+ *
+ * Ancestors are simply special symbols. Instead of calling, we consider these
+ * apart of the machine and call them directly, thus their special handling.
+ * All other symbols can simply be a call. Thus all procedures of the machine
+ * are made of ancestors and their descendants.
+ *
+
+define(leroy ()
+    push("leroy")
+    print())
+=>
+define leroy
+movestr "leroy" reg1
+push reg1
+print
+ret
+halt
+
+define(double (x)
+    push(x)
+    push(x)
+    add())
+=>
+define double
+push reg1
+push reg1
+add
+ret
+halt
+
+define(leet ()
+    push(double(500))
+    push(337)
+    print())
+=>
+define leet
+move 500 reg1
+call index(double)
+push reg1
+mov 337 reg1
+push reg1
+print
+ret
+halt
+
+*/
 
 #endif

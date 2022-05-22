@@ -47,6 +47,7 @@ struct Token
             default:
                 fatal("Unimplemented token -> primitive conversion! `%d'", type);
         }
+        return Primitive();
     }
 
     std::string
