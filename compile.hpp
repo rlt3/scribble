@@ -6,6 +6,7 @@
 #include "token.hpp"
 #include "bytecode.hpp"
 #include "machine.hpp"
+#include "frame.hpp"
 
 class Compile
 {
