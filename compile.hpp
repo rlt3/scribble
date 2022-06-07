@@ -103,35 +103,67 @@ private:
             return integer();
     }
 
-    /* call = <symbol>([ <expr> ]*) */
+    /* <symbol> := [A-Za-z]+[0-9]* */
     void
-    call ()
+    symbol (Token &symbol)
     {
-        Token tkn = expect(TKN_SYMBOL);
-        expect(TKN_LPAREN);
-
-        //_bytecode.push(Bytecode(OP_CALL, _machine.definitionEntry(tkn.str)));
     }
 
-    /* expr = <symbol> | <call> | <primitive> */
+    /* <call> := <symbol>([<expr> ]*) */
+    void
+    call (Token &symbol)
+    {
+    }
+
+    void
+    ancestor ()
+    {
+        /*
+         * Where we will handle 'primitives' of the runtime like defining new
+         * symbols or things like simple addition which do not need to be
+         * separate functions but can be 'inlined'.
+         */
+    }
+
+    bool
+    isAncestor (Token &t)
+    {
+        return false;
+    }
+
+    /* <list> := ([<expr> ]*) */
+    void
+    list ()
+    {
+    }
+
+    /* <expr> := <ancestor> | <symbol> | <call> | <list> | <primitive> */
     void
     expr ()
     {
-        if (peek().type == TKN_SYMBOL) {
-            Token sym = next();
-            if (peek().type == TKN_LPAREN) {
-                call();
+        Token token = peek();
+        if (token.type == TKN_SYMBOL) {
+            if (isAncestor(token)) {
+                ancestor();
                 return;
             }
-            /* <symbol> */
+
+            next();
+            if (peek().type == TKN_LPAREN) {
+                call(token);
+                return;
+            }
+
+            symbol(token);
+            return;
+        }
+
+        if (token.type == TKN_LPAREN) {
+            list();
             return;
         }
 
         primitive();
-
-        //auto entry = Primitive("leet");
-        //_bytecode.push(Bytecode(OP_CALL, entry));
-        //_bytecode.push(Bytecode(OP_HALT));
     }
 };
 
