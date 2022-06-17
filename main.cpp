@@ -64,7 +64,7 @@ main (int argc, char **argv)
 
 #define REPL "::repl::"
 
-    M.defineBytecode(REPL, std::queue<Bytecode>({
+    M.defineProcedure(REPL, std::queue<Bytecode>({
         Bytecode(OP_DEFINE, Primitive("leroy")),
         Bytecode(OP_MOVESTR, REG1, Primitive("leroy")),
         Bytecode(OP_PUSH, REG1),
@@ -73,27 +73,27 @@ main (int argc, char **argv)
     }));
     M.execute(REPL);
 
-    M.defineBytecode(REPL, std::queue<Bytecode>({
-        Bytecode(OP_CALL, Primitive("leroy")),
-        Bytecode(OP_HALT)
-    }));
-    M.execute(REPL);
+    //M.defineProcedure(REPL, std::queue<Bytecode>({
+    //    Bytecode(OP_CALL, Primitive("leroy")),
+    //    Bytecode(OP_HALT)
+    //}));
+    //M.execute(REPL);
 
-    M.defineBytecode(REPL, std::queue<Bytecode>({
-        Bytecode(OP_DEFINE, Primitive("leet")),
-        Bytecode(OP_MOVE, REG1, Primitive(1000)),
-        Bytecode(OP_MOVE, REG2, Primitive(337)),
-        Bytecode(OP_PUSH, REG1),
-        Bytecode(OP_PUSH, REG2),
-        Bytecode(OP_ADD),
-        Bytecode(OP_PRINT),
-        Bytecode(OP_RET)
-    }));
-    M.execute(REPL);
+    //M.defineProcedure(REPL, std::queue<Bytecode>({
+    //    Bytecode(OP_DEFINE, Primitive("leet")),
+    //    Bytecode(OP_MOVE, REG1, Primitive(1000)),
+    //    Bytecode(OP_MOVE, REG2, Primitive(337)),
+    //    Bytecode(OP_PUSH, REG1),
+    //    Bytecode(OP_PUSH, REG2),
+    //    Bytecode(OP_ADD),
+    //    Bytecode(OP_PRINT),
+    //    Bytecode(OP_RET)
+    //}));
+    //M.execute(REPL);
 
     auto tokens = parse.stream();
     auto instructions = compile.tokens(tokens);
-    M.defineBytecode(REPL, instructions);
+    M.defineProcedure(REPL, instructions);
     M.execute(REPL);
 
     return 0;

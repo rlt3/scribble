@@ -51,19 +51,34 @@ public:
      * stack and define the entry to those instructions as a function.
      */
     void
-    defineBytecode (std::string name, std::queue<Bytecode> instructions)
+    defineProcedure (std::string name, std::queue<Bytecode> instructions)
     {
         unsigned long entry = stack.reserveIndex();
         Data data;
 
         while (!instructions.empty()) {
-            data.assign(instructions.front());
+            Bytecode bc = instructions.front();
+            bc.print();
+            data.assign(bc);
             stack.reservePush(data);
             instructions.pop();
         }
 
         setProcedure(name, entry);
     }
+
+    /*
+     * Get the entry point for a symbol.
+     */
+    unsigned long
+    procedureEntry (std::string name)
+    {
+        auto iter = _definitions.find(name);
+        if (iter == _definitions.end())
+            fatal("Cannot call undefined symbol `%s'", name.c_str());
+        return iter->second.index;
+    }
+
 
     /*
      * Roll back the stack index for the reserved section. This lets us
@@ -207,12 +222,12 @@ protected:
      * pointer (current PC) and the current REGBASE.
      */
     void
-    call (Primitive symbol)
+    call (Primitive index)
     {
         Data base = reg(REGBASE);
         stack.push(Data(PC));
         stack.push(base);
-        PC = procedureEntry(symbol.string());
+        PC = index.integer();
         registers[REGBASE] = Data(stack.index());
     }
 
@@ -252,7 +267,7 @@ protected:
         setProcedure(prm.string(), PC);
     }
 
-protected:
+private:
     Stack stack;
     std::vector<Data> registers;
     unsigned long PC; /* program counter */
@@ -265,19 +280,6 @@ protected:
         _definitions[name] = Procedure(name, entry);
         printf("| defined `%s' at %lu\n", name.c_str(), entry);
     }
-
-    /*
-     * Get the entry point for a symbol.
-     */
-    unsigned long
-    procedureEntry (std::string name)
-    {
-        auto iter = _definitions.find(name);
-        if (iter == _definitions.end())
-            fatal("Cannot call undefined symbol `%s'", name.c_str());
-        return iter->second.index;
-    }
-
 };
 
 #endif

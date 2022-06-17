@@ -52,6 +52,17 @@ struct Bytecode
         , reg2(REGNULL)
         , primitive(Primitive())
     {}
+
+    void
+    print ()
+    {
+        std::cout << operatorString(op);
+        std::cout << "(";
+        std::cout << registerString(reg1);
+        std::cout << " " << registerString(reg2);
+        std::cout << " " << primitive.toString();
+        std::cout << ")\n";
+    }
 };
 
 #endif

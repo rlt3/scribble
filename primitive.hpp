@@ -37,22 +37,28 @@ struct Primitive
         return _integer;
     }
 
-    void
-    print ()
+    std::string
+    toString ()
     {
         switch (_type) {
             case PRM_STRING:
-                printf("string(%s)\n", _string.c_str());
+                return _string;
                 break;
 
             case PRM_INTEGER:
-                printf("<integer>(0x%08lx)\n", _integer);
+                return std::to_string(_integer);
                 break;
 
             default:
-                printf("NULL()\n");
+                return "NULL";
                 break;
         }
+    }
+
+    void
+    print ()
+    {
+        printf("%s\n", toString().c_str());
     }
 
 protected:

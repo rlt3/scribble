@@ -51,7 +51,7 @@ struct Token
     }
 
     std::string
-    typestring ()
+    typeString ()
     {
         switch (type) {
             case TKN_STRING:  return "String";

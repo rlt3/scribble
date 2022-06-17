@@ -27,7 +27,9 @@ public:
     tokens (std::queue<Token> t)
     {
         _tokens = t;
+        _bytecode = std::queue<Bytecode>();
         expr();
+        _bytecode.push(Bytecode(OP_HALT));
         return _bytecode;
     }
 
@@ -72,7 +74,7 @@ private:
     void
     define (std::string name, std::queue<Bytecode> bc)
     {
-        _machine.defineBytecode(name, bc);
+        _machine.defineProcedure(name, bc);
     }
 
     void
@@ -95,9 +97,11 @@ private:
 
     /* primitive = <string> | <integer> */
     void
-    primitive ()
+    primitive (Token &token)
     {
-        if (peek().type == TKN_STRING)
+        assert(0);
+
+        if (token.type == TKN_STRING)
             return string();
         else
             return integer();
@@ -107,26 +111,22 @@ private:
     void
     symbol (Token &symbol)
     {
-    }
-
-    /* <call> := <symbol>([<expr> ]*) */
-    void
-    call (Token &symbol)
-    {
+        assert(0);
     }
 
     void
-    ancestor ()
+    ancestor (Token &symbol)
     {
         /*
          * Where we will handle 'primitives' of the runtime like defining new
          * symbols or things like simple addition which do not need to be
          * separate functions but can be 'inlined'.
          */
+        assert(0);
     }
 
     bool
-    isAncestor (Token &t)
+    isAncestor (Token &token)
     {
         return false;
     }
@@ -135,20 +135,36 @@ private:
     void
     list ()
     {
+        /* TODO */
+        assert(0);
     }
 
-    /* <expr> := <ancestor> | <symbol> | <call> | <list> | <primitive> */
+    /* <call> := <symbol>([<expr> ]*) */
+    void
+    call (Token &symbol)
+    {
+        assert(symbol.type == TKN_SYMBOL);
+
+        int index = _machine.procedureEntry(symbol.str);
+        _bytecode.push(Bytecode(OP_CALL, Primitive(index)));
+
+        expect(TKN_LPAREN);
+        while (peek().type != TKN_RPAREN)
+            expr();
+        next();
+    }
+
+    /* <expr> := <ancestor> | <call> | <symbol> | <list> | <primitive> */
     void
     expr ()
     {
-        Token token = peek();
+        Token token = next();
         if (token.type == TKN_SYMBOL) {
             if (isAncestor(token)) {
-                ancestor();
+                ancestor(token);
                 return;
             }
 
-            next();
             if (peek().type == TKN_LPAREN) {
                 call(token);
                 return;
@@ -163,7 +179,7 @@ private:
             return;
         }
 
-        primitive();
+        primitive(token);
     }
 };
 
