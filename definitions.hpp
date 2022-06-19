@@ -1,6 +1,10 @@
 #ifndef SCRIBBLE_DEFINITIONS
 #define SCRIBBLE_DEFINITIONS
 
+#define REPL_SYMBOL "::repl::"
+#define NUM_ARG_REGISTERS 3
+
+
 typedef enum {
     REGNULL = 0,
     REG1,
@@ -23,7 +27,6 @@ typedef enum {
     OP_ADD,
     OP_CALL,
     OP_RET,
-    OP_DEFINE,
     OP_MOVESTR,
 } Operator;
 
@@ -58,7 +61,6 @@ operatorString (Operator op)
         case OP_ADD:     return "ADD"; break;
         case OP_CALL:    return "CALL"; break;
         case OP_RET:     return "RET"; break;
-        case OP_DEFINE:  return "DEFINE"; break;
         case OP_MOVESTR: return "MOVESTR"; break;
         default:
             return "!-! BAD OP !-!";

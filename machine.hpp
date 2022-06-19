@@ -50,7 +50,7 @@ public:
      * Write the given instructions to the machine in the reserved part of the
      * stack and define the entry to those instructions as a function.
      */
-    void
+    unsigned long
     defineProcedure (std::string name, std::queue<Bytecode> instructions)
     {
         unsigned long entry = stack.reserveIndex();
@@ -65,6 +65,7 @@ public:
         }
 
         setProcedure(name, entry);
+        return entry;
     }
 
     /*
@@ -91,13 +92,15 @@ public:
     }
 
     /*
-     * Execute starting from the given index on the stack, starting from the
-     * bottom and moving up.
+     * Execute the given instructions. The given instructions are treated as
+     * coming from a REPL. Thus we add them always to the top of the executable
+     * stack and execute them as a procedure.
      */
     void
-    execute (std::string name)
+    execute (std::queue<Bytecode> instructions)
     {
-        PC = procedureEntry(name);
+        unsigned long entry = defineProcedure(REPL_SYMBOL, instructions);
+        PC = entry;
         registers[REGBASE] = stack.index();
 
         while (true) {
@@ -111,10 +114,8 @@ public:
             switch (bc.op) {
 
                 /* define always halts after defining an expression */
-                case OP_DEFINE:
-                    define(bc.primitive);
                 case OP_HALT:
-                    return;
+                    goto cleanup;
 
                 case OP_MOVESTR:
                     move(bc.primitive, bc.reg1);
@@ -154,6 +155,9 @@ public:
                     fatal("unimplemented bytecode operator!");
             }
         }
+
+    cleanup:
+        stack.reserveRollback(entry);
     }
 
 protected:
@@ -225,6 +229,20 @@ protected:
     call (Primitive index)
     {
         Data base = reg(REGBASE);
+
+        ///*
+        // * Pop the stack, from bottom to top, into the argument registers up to
+        // * the maximum number of argument registers, e.g. if I push 4, 5, and 6
+        // * onto the stack, in that order, REG1 = 4, REG2 = 5, etc.
+        // */
+        //int idx, reg;
+        //for (idx = stack.index(), reg = 1;
+        //     idx > 0 && reg <= NUM_ARG_REGISTERS;
+        //     idx--, reg++)
+        //{
+        //    registers[reg] = stack.pop();
+        //}
+
         stack.push(Data(PC));
         stack.push(base);
         PC = index.integer();
@@ -253,18 +271,6 @@ protected:
         Data d1 = stack.pop();
         Data d2 = stack.pop();
         stack.push(Data(d1.primitive().integer() + d2.primitive().integer()));
-    }
-
-    /*
-     * Define the instructions on the stack as a symbol to be used later.
-     * Because the instructions are compiled first and placed on the stack to
-     * be interpreted, we can just save that location. This sets a procedure
-     * to the very next instruction after `define'.
-     */
-    void
-    define (Primitive prm)
-    {
-        setProcedure(prm.string(), PC);
     }
 
 private:
