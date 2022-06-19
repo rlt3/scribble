@@ -62,12 +62,21 @@ main (int argc, char **argv)
     Machine M;
     Compile compile(M);
 
-    M.defineProcedure("leroy", std::queue<Bytecode>({
-        Bytecode(OP_MOVESTR, REG1, Primitive("leroy")),
+    //M.defineProcedure("leroy", std::queue<Bytecode>({
+    //    Bytecode(OP_MOVESTR, REG1, Primitive("leroy")),
+    //    Bytecode(OP_PUSH, REG1),
+    //    Bytecode(OP_PRINT),
+    //    Bytecode(OP_RET)
+    //}), 0);
+
+    M.defineProcedure("double", std::queue<Bytecode>({
+        Bytecode(OP_LOAD, REG1, Primitive(0)),
         Bytecode(OP_PUSH, REG1),
-        Bytecode(OP_PRINT),
-        Bytecode(OP_RET)
-    }));
+        Bytecode(OP_PUSH, REG1),
+        Bytecode(OP_ADD),
+        Bytecode(OP_RET),
+        Bytecode(OP_HALT)
+    }), 1);
 
     auto tokens = parse.stream();
     auto instructions = compile.tokens(tokens);

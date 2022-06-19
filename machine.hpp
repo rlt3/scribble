@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <queue>
+#include <stack>
 #include <map>
 
 #include "definitions.hpp"
@@ -12,16 +13,18 @@
 struct Procedure
 {
     std::string name;
-    unsigned long index;
+    unsigned long entry;
+    unsigned long nargs;
 
     Procedure()
         : name("NULL")
-        , index(0)
+        , entry(0)
     {}
 
-    Procedure(std::string name, unsigned long index)
+    Procedure(std::string name, unsigned long entry, unsigned long nargs)
         : name(name)
-        , index(index)
+        , entry(entry)
+        , nargs(nargs)
     {}
 };
 
@@ -51,7 +54,9 @@ public:
      * stack and define the entry to those instructions as a function.
      */
     unsigned long
-    defineProcedure (std::string name, std::queue<Bytecode> instructions)
+    defineProcedure (std::string name,
+                     std::queue<Bytecode> instructions,
+                     unsigned long nargs)
     {
         unsigned long entry = stack.reserveIndex();
         Data data;
@@ -64,7 +69,7 @@ public:
             instructions.pop();
         }
 
-        setProcedure(name, entry);
+        setProcedure(name, entry, nargs);
         return entry;
     }
 
@@ -74,21 +79,7 @@ public:
     unsigned long
     procedureEntry (std::string name)
     {
-        auto iter = _definitions.find(name);
-        if (iter == _definitions.end())
-            fatal("Cannot call undefined symbol `%s'", name.c_str());
-        return iter->second.index;
-    }
-
-
-    /*
-     * Roll back the stack index for the reserved section. This lets us
-     * overwrite definitions. This is useful for executing REPL commands.
-     */
-    void
-    rollbackReserved (unsigned long idx)
-    {
-        stack.reserveRollback(idx);
+        return getProcedure(name).entry;
     }
 
     /*
@@ -99,9 +90,10 @@ public:
     void
     execute (std::queue<Bytecode> instructions)
     {
-        unsigned long entry = defineProcedure(REPL_SYMBOL, instructions);
+        unsigned long entry = defineProcedure(REPL_SYMBOL, instructions, 0);
+
         PC = entry;
-        registers[REGBASE] = stack.index();
+        registers[REGBASE] = Data(stack.index());
 
         while (true) {
             Data *data = stack.reserved(PC);
@@ -112,8 +104,6 @@ public:
 
             Bytecode bc = data->bytecode();
             switch (bc.op) {
-
-                /* define always halts after defining an expression */
                 case OP_HALT:
                     goto cleanup;
 
@@ -123,6 +113,10 @@ public:
 
                 case OP_MOVE:
                     move(bc.primitive, bc.reg1);
+                    break;
+
+                case OP_LOAD:
+                    load(bc.primitive, bc.reg1);
                     break;
 
                 case OP_PUSH:
@@ -174,26 +168,23 @@ protected:
     }
 
     /* 
-     * Load the address of some Data on the stack. `num` is the
-     * index of the stack starting from the top and going down.
-     * For example, E.g. the top of the stack is 0, second from
-     * top is -1, and so on. Load that Data's pointer into a
-     * register.
+     * load a value from the stack into a register. If the signed index is
+     * negative then address from the top of the stack, e.g. -1 is the top of
+     * the stack, -2 is second from the top, etc. If the index is 0 or positive
+     * then we gather arguments from the frame.
      */
     void
-    pointer (signed num, Register reg)
+    load (Primitive primitive, Register r)
     {
-        fatal("TODO pointer");
-    }
-
-    /*
-     * Do the same as above except dereference the pointer as well.
-     * This is effectively reading or loading from the stack.
-     */
-    void
-    load (signed num, Register reg)
-    {
-        fatal("TODO load");
+        long index = primitive.integer();
+        long whence;
+        if (index < 0) {
+            whence = index + 1;
+        } else {
+            long base = reg(REGBASE).primitive().integer();
+            whence = base - stack.index() + index + 1;
+        }
+        registers[r] = stack.peek(whence);
     }
 
     /* push a register's value onto the stack */
@@ -205,9 +196,92 @@ protected:
 
     /* pop from the stack into a register */
     void
-    pop (Register reg)
+    pop (Register r)
     {
-        registers[reg] = stack.pop();
+        /* TODO check stack underflow against REGBASE */
+        registers[r] = stack.pop();
+    }
+
+    /*
+     * Call a procedure by looking up the symbol's entry point and jumping to
+     * it.  REGBASE is just the base pointer. This pushes both the return
+     * pointer (current PC) and the current REGBASE.
+     */
+    void
+    call (Primitive symbol)
+    {
+        std::string name = symbol.string();
+        auto& proc = getProcedure(name);
+        Data old_base = reg(REGBASE);
+
+        if (stack.index() - old_base.primitive().integer() < proc.nargs)
+            fatal("Not enough provided arguments for procedure `%s'", name.c_str());
+
+        /* Pop all arguments and hold them temporarily */
+        std::stack<Data> arguments;
+        for (unsigned long i = 0; i < proc.nargs; i++)
+            arguments.push(stack.pop());
+
+        /*
+         * Push the return pointer and old base pointer. We do this here, after
+         * popping all arguments, so that these arguments will be automatically
+         * cleaned up when returning from the call.
+         */
+        stack.push(Data(PC));
+        stack.push(old_base);
+
+        /*
+         * Set the new base pointer so that the stack index just before the
+         * base of the frame holds the old base pointer and return pointer
+         */
+        registers[REGBASE] = Data(stack.index());
+
+        /* finally, push all arguments and jump to the procedure */
+        while (!arguments.empty()) {
+            stack.push(arguments.top());
+            arguments.pop();
+        }
+
+        PC = proc.entry;
+    }
+
+    /*
+     * Pops everything off the stack until hitting REGBASE. Uses the return
+     * pointer and old base pointer to setup previous stack frame. If there
+     * were values on the stack then it treats the top-most value as a return
+     * value and places it on top of the previous stack frame.
+     */
+    void
+    ret ()
+    {
+        Data ret;
+        bool has_ret = false;
+        unsigned long floor = reg(REGBASE).primitive().integer();
+
+        if (stack.index() > floor) {
+            ret = stack.pop();
+            has_ret = true;
+        }
+
+        while (stack.index() > floor)
+            stack.pop();
+
+        Data base = stack.pop();
+        Data addr = stack.pop();
+
+        PC = addr.primitive().integer();
+        registers[REGBASE] = base.primitive().integer();
+
+        if (has_ret)
+            stack.push(ret);
+    }
+
+    void
+    add ()
+    {
+        Data d1 = stack.pop();
+        Data d2 = stack.pop();
+        stack.push(Data(d1.primitive().integer() + d2.primitive().integer()));
     }
 
     /* print the value at the given stack index as hex */
@@ -220,59 +294,6 @@ protected:
         data.primitive().print();
     }
 
-    /*
-     * Call a procedure by looking up the symbol's entry point and jumping to
-     * it.  REGBASE is just the base pointer. This pushes both the return
-     * pointer (current PC) and the current REGBASE.
-     */
-    void
-    call (Primitive index)
-    {
-        Data base = reg(REGBASE);
-
-        ///*
-        // * Pop the stack, from bottom to top, into the argument registers up to
-        // * the maximum number of argument registers, e.g. if I push 4, 5, and 6
-        // * onto the stack, in that order, REG1 = 4, REG2 = 5, etc.
-        // */
-        //int idx, reg;
-        //for (idx = stack.index(), reg = 1;
-        //     idx > 0 && reg <= NUM_ARG_REGISTERS;
-        //     idx--, reg++)
-        //{
-        //    registers[reg] = stack.pop();
-        //}
-
-        stack.push(Data(PC));
-        stack.push(base);
-        PC = index.integer();
-        registers[REGBASE] = Data(stack.index());
-    }
-
-    /*
-     * Pops everything off the stack until hitting REGBASE. Pops off the return
-     * pointer and old REGBASE.
-     */
-    void
-    ret ()
-    {
-        unsigned long floor = reg(REGBASE).primitive().integer();
-        while (stack.index() > floor)
-            stack.pop();
-        Data base = stack.pop();
-        Data addr = stack.pop();
-        PC = addr.primitive().integer();
-        registers[REGBASE] = base.primitive().integer();
-    }
-
-    void
-    add ()
-    {
-        Data d1 = stack.pop();
-        Data d2 = stack.pop();
-        stack.push(Data(d1.primitive().integer() + d2.primitive().integer()));
-    }
-
 private:
     Stack stack;
     std::vector<Data> registers;
@@ -281,10 +302,19 @@ private:
     std::map<std::string, Procedure> _definitions;
 
     void
-    setProcedure (std::string name, unsigned long entry)
+    setProcedure (std::string name, unsigned long entry, unsigned long nargs)
     {
-        _definitions[name] = Procedure(name, entry);
+        _definitions[name] = Procedure(name, entry, nargs);
         printf("| defined `%s' at %lu\n", name.c_str(), entry);
+    }
+
+    const Procedure&
+    getProcedure (std::string name)
+    {
+        auto iter = _definitions.find(name);
+        if (iter == _definitions.end())
+            fatal("Cannot find undefined symbol `%s'", name.c_str());
+        return iter->second;
     }
 };
 

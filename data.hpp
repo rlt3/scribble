@@ -45,7 +45,7 @@ struct Data
         , _is_executable(true)
     {}
 
-    bool
+    DataType
     type () const
     {
         return _type;
@@ -98,21 +98,16 @@ struct Data
         return _bytecode;
     }
 
-    void
-    print ()
+    std::string
+    toString ()
     {
         switch (_type) {
-            case DATA_CODE:
-                printf("<code>\n");
-                break;
-
-            case DATA_PRIMITIVE:
-                _primitive.print(); 
-                break;
+            case DATA_CODE: return "<code>";
+            case DATA_PRIMITIVE: return _primitive.toString();
 
             case DATA_NULL:
-                printf("NULL\n");
-                break;
+            default:
+                return "NULL";
         }
     }
 

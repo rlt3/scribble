@@ -26,11 +26,21 @@ public:
     std::queue<Bytecode>
     tokens (std::queue<Token> t)
     {
-        _tokens = t;
         std::queue<Bytecode> bc;
-        expr(bc);
+
+        bc.push(Bytecode(OP_MOVE, REG1, Primitive(16)));
+        bc.push(Bytecode(OP_PUSH, REG1));
+        bc.push(Bytecode(OP_CALL, Primitive("double")));
+        bc.push(Bytecode(OP_PRINT));
         bc.push(Bytecode(OP_HALT));
+
         return bc;
+
+        //_tokens = t;
+        //std::queue<Bytecode> bc;
+        //expr(bc);
+        //bc.push(Bytecode(OP_HALT));
+        //return bc;
     }
 
 protected:
@@ -73,7 +83,8 @@ private:
     void
     define (std::string name, std::queue<Bytecode> bc)
     {
-        _machine.defineProcedure(name, bc);
+        assert(0);
+        //_machine.defineProcedure(name, bc);
     }
 
     void
@@ -268,7 +279,7 @@ define(leet ()
 define leet
 move 500 reg1
 push reg1
-call index(double)
+call double
 mov 337 reg1
 push reg1
 add

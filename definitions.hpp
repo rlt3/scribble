@@ -4,7 +4,6 @@
 #define REPL_SYMBOL "::repl::"
 #define NUM_ARG_REGISTERS 3
 
-
 typedef enum {
     REGNULL = 0,
     REG1,
@@ -19,15 +18,14 @@ typedef enum {
     OP_NULL,
     OP_HALT,
     OP_MOVE,
-    OP_POINTER,
+    OP_MOVESTR,
     OP_LOAD,
     OP_PUSH,
     OP_POP,
-    OP_PRINT,
-    OP_ADD,
     OP_CALL,
     OP_RET,
-    OP_MOVESTR,
+    OP_ADD,
+    OP_PRINT,
 } Operator;
 
 static std::string
@@ -53,15 +51,14 @@ operatorString (Operator op)
         case OP_NULL:    return "NULL"; break;
         case OP_HALT:    return "HALT"; break;
         case OP_MOVE:    return "MOVE"; break;
-        case OP_POINTER: return "POINTER"; break;
+        case OP_MOVESTR: return "MOVESTR"; break;
         case OP_LOAD:    return "LOAD"; break;
         case OP_PUSH:    return "PUSH"; break;
         case OP_POP:     return "POP"; break;
-        case OP_PRINT:   return "PRINT"; break;
-        case OP_ADD:     return "ADD"; break;
         case OP_CALL:    return "CALL"; break;
         case OP_RET:     return "RET"; break;
-        case OP_MOVESTR: return "MOVESTR"; break;
+        case OP_ADD:     return "ADD"; break;
+        case OP_PRINT:   return "PRINT"; break;
         default:
             return "!-! BAD OP !-!";
     }
