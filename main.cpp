@@ -69,14 +69,25 @@ main (int argc, char **argv)
     //    Bytecode(OP_RET)
     //}), 0);
 
-    M.defineProcedure("double", std::queue<Bytecode>({
+    M.defineProcedure("double", 1, std::queue<Bytecode>({
         Bytecode(OP_LOAD, REG1, Primitive(0)),
         Bytecode(OP_PUSH, REG1),
         Bytecode(OP_PUSH, REG1),
-        Bytecode(OP_ADD),
+        Bytecode(OP_CALL, Primitive("add")),
         Bytecode(OP_RET),
         Bytecode(OP_HALT)
-    }), 1);
+    }));
+
+    M.defineProcedure("add-then-double", 2, std::queue<Bytecode>({
+        Bytecode(OP_LOAD, REG1, Primitive(0)),
+        Bytecode(OP_LOAD, REG2, Primitive(1)),
+        Bytecode(OP_PUSH, REG1),
+        Bytecode(OP_PUSH, REG2),
+        Bytecode(OP_CALL, Primitive("add")),
+        Bytecode(OP_CALL, Primitive("double")),
+        Bytecode(OP_RET),
+        Bytecode(OP_HALT)
+    }));
 
     auto tokens = parse.stream();
     auto instructions = compile.tokens(tokens);

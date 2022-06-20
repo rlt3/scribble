@@ -13,24 +13,17 @@ class Compile
 public:
     Compile (Machine& machine)
         : _machine(machine)
-    {
-        //define("add", std::queue<Bytecode>({
-        //    Bytecode(OP_PUSH, REG1),
-        //    Bytecode(OP_PUSH, REG2),
-        //    Bytecode(OP_ADD),
-        //    Bytecode(OP_POP, REG1),
-        //    Bytecode(OP_RET)
-        //}));
-    }
+    {}
 
     std::queue<Bytecode>
     tokens (std::queue<Token> t)
     {
         std::queue<Bytecode> bc;
 
-        bc.push(Bytecode(OP_MOVE, REG1, Primitive(16)));
+        bc.push(Bytecode(OP_MOVE, REG1, Primitive(10)));
         bc.push(Bytecode(OP_PUSH, REG1));
-        bc.push(Bytecode(OP_CALL, Primitive("double")));
+        bc.push(Bytecode(OP_PUSH, REG1));
+        bc.push(Bytecode(OP_CALL, Primitive("add-then-double")));
         bc.push(Bytecode(OP_PRINT));
         bc.push(Bytecode(OP_HALT));
 
@@ -84,7 +77,6 @@ private:
     define (std::string name, std::queue<Bytecode> bc)
     {
         assert(0);
-        //_machine.defineProcedure(name, bc);
     }
 
     void
@@ -127,29 +119,19 @@ private:
     }
 
     void
-    ancestor (std::queue<Bytecode> &bc, Token &symbol)
+    reserved (std::queue<Bytecode> &bc, Token &symbol)
     {
         /*
-         * Where we will handle 'primitives' of the runtime like defining new
-         * symbols or things like simple addition which do not need to be
-         * separate functions but can be 'inlined'.
+         * Where we will handle runtime-only reserved procedures such as
+         * `define'.
          */
         assert(0);
-        //if (symbol.str == "push") {
-        //}
-        //else if (symbol.str == "pop") {
-        //}
-        //else {
-        //    fatal("Attempting to parse unexpected ancestor");
-        //}
     }
 
     bool
-    isAncestor (Token &token)
+    isReserved (Token &token)
     {
-        //if (token.str == "push")
-        //    return true;
-        //if (token.str == "pop")
+        //if (token.str == "define")
         //    return true;
         return false;
     }
@@ -162,8 +144,8 @@ private:
 
         /*
          * Trying to determine how to handle lists. I'm thinking in terms of
-         * defining the `define` ancestor primitive. I really want to design
-         * those primitives using what is already available.
+         * defining the `define` procedure. I really want to design those
+         * primitives using what is already available.
          *
          * What the machine requires for calls is a discrete list of arguments.
          * I've decided to go with registers 1-4 as argument registers, i.e. a
@@ -192,14 +174,14 @@ private:
         next();
     }
 
-    /* <expr> := <ancestor> | <call> | <symbol> | <list> | <primitive> */
+    /* <expr> := <reserved> | <call> | <symbol> | <list> | <primitive> */
     void
     expr (std::queue<Bytecode> &bc)
     {
         Token token = next();
         if (token.type == TKN_SYMBOL) {
-            if (isAncestor(token)) {
-                ancestor(bc, token);
+            if (isReserved(token)) {
+                reserved(bc, token);
                 return;
             }
 
@@ -226,15 +208,20 @@ private:
  * <string> := "[A-Za-z0-9 ]*"
  * <symbol> := [A-Za-z]+[0-9]*
  * <primitive> := <string> | <integer>
- * <ancestor> := push | pop | define | print | add ; etc.
+ * <reserved> := push | pop | define | print | add ; etc.
  * <call> := <symbol>([<expr> ]*)
  * <list> := ([<expr> ]*)
- * <expr> := <ancestor> | <symbol> | <call> | <list> | <primitive>
+ * <expr> := <reserved> | <symbol> | <call> | <list> | <primitive>
  *
- * Ancestors are simply special symbols. Instead of calling, we consider these
- * apart of the machine and call them directly, thus their special handling.
- * All other symbols can simply be a call. Thus all procedures of the machine
- * are made of ancestors and their descendants.
+ * Ancestors are simply special pre-defined procedures which make direct use of
+ * machine primitives.  the machine. All newly defined procedures may use
+ * ancestor procedures. The only procedures able to be defined at the beginning
+ * will be ancestor procedures as they are the building blocks of any program.
+ * Thus all procedures of the machine are made of ancestors and their
+ * descendants.
+ *
+ * Some examples include "print", "add", "div" and will probably have stack
+ * analogues too -- "swap", "pop", "push", etc.
  *
 
 define(leroy ()

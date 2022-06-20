@@ -35,6 +35,19 @@ public:
         : stack(Stack())
         , registers(std::vector<Data>(REGCOUNT))
     {
+        /*
+         * Define the ancestor procedures for our machine.
+         */
+
+        defineProcedure("add", 2, std::queue<Bytecode>({
+            Bytecode(OP_ADD),
+            Bytecode(OP_RET)
+        }));
+
+        defineProcedure("print", 1, std::queue<Bytecode>({
+            Bytecode(OP_PRINT),
+            Bytecode(OP_RET)
+        }));
     }
 
     Data
@@ -55,8 +68,8 @@ public:
      */
     unsigned long
     defineProcedure (std::string name,
-                     std::queue<Bytecode> instructions,
-                     unsigned long nargs)
+                     unsigned long nargs,
+                     std::queue<Bytecode> instructions)
     {
         unsigned long entry = stack.reserveIndex();
         Data data;
@@ -90,7 +103,7 @@ public:
     void
     execute (std::queue<Bytecode> instructions)
     {
-        unsigned long entry = defineProcedure(REPL_SYMBOL, instructions, 0);
+        unsigned long entry = defineProcedure(REPL_SYMBOL, 0, instructions);
 
         PC = entry;
         registers[REGBASE] = Data(stack.index());
@@ -284,7 +297,7 @@ protected:
         stack.push(Data(d1.primitive().integer() + d2.primitive().integer()));
     }
 
-    /* print the value at the given stack index as hex */
+    /* print the top most value on the stack */
     void
     print ()
     {
