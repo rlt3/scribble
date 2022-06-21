@@ -48,27 +48,42 @@
 class Parse
 {
 public:
-    Parse (std::istream& stream)
-        : _stream(stream)
-    {
-    }
+    Parse ()
+    { }
 
     /*
-     * TODO: I'd like this class to be an interface for parsing various types
-     * of buffers. So, `stream', `file`, etc.
+     * Parse an input stream. This parsing is different than parsing a static
+     * file.  One difference is that calling `next' in the wrong area can cause
+     * the parser to wait for more input rather than return an expression.
+     *
+     * Get the first line from an input stream and parse it.
      */
     std::queue<Token>
-    stream ()
+    stream (std::istream& input)
     {
-        tokens = std::queue<Token>();
+        std::string line = "";
+        int c;
+        while (!input.eof()) {
+            c = input.get();
+            if (c == '\n')
+                break;
+            line += c;
+        }
+
+        _stream = std::stringstream(line);
+        _tokens = std::queue<Token>();
+
         skipwhitespace();
-        expr();
-        return tokens;
+        while (!_stream.eof())
+            expr();
+
+        _tokens.push(TKN_EOF);
+        return _tokens;
     }
 
 protected:
-    std::queue<Token> tokens;
-    std::istream& _stream;
+    std::queue<Token> _tokens;
+    std::stringstream _stream;
 
     int
     next ()
@@ -79,6 +94,8 @@ protected:
     int
     peek ()
     {
+        if (eof())
+            return EOF;
         return _stream.peek();
     }
 
@@ -94,8 +111,14 @@ protected:
     void
     skipwhitespace ()
     {
-        while (!eof() && isspace(peek()) && peek() != '\n')
+        while (!eof() && isspace(peek()))
             next();
+    }
+
+    bool
+    isnewline (int c)
+    {
+        return (c == '\n');
     }
 
     bool
@@ -127,7 +150,7 @@ private:
             str += c;
         }
 
-        tokens.push(Token(TKN_STRING, str));
+        _tokens.push(Token(TKN_STRING, str));
     }
 
     void
@@ -145,7 +168,7 @@ private:
             str += next();
         }
 
-        tokens.push(Token(TKN_INTEGER, str));
+        _tokens.push(Token(TKN_INTEGER, str));
     }
 
     void
@@ -165,7 +188,7 @@ private:
             str += next();
         }
 
-        tokens.push(Token(TKN_SYMBOL, str));
+        _tokens.push(Token(TKN_SYMBOL, str));
     }
 
     void
@@ -185,7 +208,7 @@ private:
 
         if (peek() == '(') {
             next();
-            tokens.push(Token(TKN_LPAREN));
+            _tokens.push(Token(TKN_LPAREN));
 
             while (true) {
                 skipwhitespace();
@@ -193,7 +216,7 @@ private:
                     expect(')');
                 if (peek() == ')') {
                     next();
-                    tokens.push(Token(TKN_RPAREN));
+                    _tokens.push(Token(TKN_RPAREN));
                     break;
                 }
                 expr();

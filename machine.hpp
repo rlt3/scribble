@@ -8,25 +8,8 @@
 
 #include "definitions.hpp"
 #include "error.hpp"
+#include "procedure.hpp"
 #include "stack.hpp"
-
-struct Procedure
-{
-    std::string name;
-    unsigned long entry;
-    unsigned long nargs;
-
-    Procedure()
-        : name("NULL")
-        , entry(0)
-    {}
-
-    Procedure(std::string name, unsigned long entry, unsigned long nargs)
-        : name(name)
-        , entry(entry)
-        , nargs(nargs)
-    {}
-};
 
 class Machine
 {

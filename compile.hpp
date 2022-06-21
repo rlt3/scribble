@@ -20,9 +20,10 @@ public:
     {
         std::queue<Bytecode> bc;
 
-        bc.push(Bytecode(OP_MOVE, REG1, Primitive(10)));
+        bc.push(Bytecode(OP_MOVE, REG1, Primitive(7)));
+        bc.push(Bytecode(OP_MOVE, REG2, Primitive(5)));
         bc.push(Bytecode(OP_PUSH, REG1));
-        bc.push(Bytecode(OP_PUSH, REG1));
+        bc.push(Bytecode(OP_PUSH, REG2));
         bc.push(Bytecode(OP_CALL, Primitive("add-then-double")));
         bc.push(Bytecode(OP_PRINT));
         bc.push(Bytecode(OP_HALT));

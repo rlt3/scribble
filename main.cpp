@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <sstream>
+
 #include "parse.hpp"
 #include "machine.hpp"
 #include "compile.hpp"
@@ -58,7 +60,7 @@ main (int argc, char **argv)
      *   symbols once they've been compiled.
      */
 
-    Parse parse(std::cin);
+    Parse parse;
     Machine M;
     Compile compile(M);
 
@@ -89,8 +91,12 @@ main (int argc, char **argv)
         Bytecode(OP_HALT)
     }));
 
-    auto tokens = parse.stream();
+    auto tokens = parse.stream(std::cin);
     auto instructions = compile.tokens(tokens);
+    M.execute(instructions);
+
+    tokens = parse.stream(std::cin);
+    instructions = compile.tokens(tokens);
     M.execute(instructions);
 
     return 0;
