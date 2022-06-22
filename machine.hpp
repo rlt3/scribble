@@ -59,7 +59,7 @@ public:
 
         while (!instructions.empty()) {
             Bytecode bc = instructions.front();
-            bc.print();
+            printf("| "); bc.print();
             data.assign(bc);
             stack.reservePush(data);
             instructions.pop();

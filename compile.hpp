@@ -16,25 +16,13 @@ public:
     {}
 
     std::queue<Bytecode>
-    tokens (std::queue<Token> t)
+    tokens (std::queue<Token> tokens)
     {
         std::queue<Bytecode> bc;
-
-        bc.push(Bytecode(OP_MOVE, REG1, Primitive(7)));
-        bc.push(Bytecode(OP_MOVE, REG2, Primitive(5)));
-        bc.push(Bytecode(OP_PUSH, REG1));
-        bc.push(Bytecode(OP_PUSH, REG2));
-        bc.push(Bytecode(OP_CALL, Primitive("add-then-double")));
-        bc.push(Bytecode(OP_PRINT));
+        _tokens = tokens;
+        expr(bc);
         bc.push(Bytecode(OP_HALT));
-
         return bc;
-
-        //_tokens = t;
-        //std::queue<Bytecode> bc;
-        //expr(bc);
-        //bc.push(Bytecode(OP_HALT));
-        //return bc;
     }
 
 protected:
@@ -81,20 +69,18 @@ private:
     }
 
     void
-    integer (std::queue<Bytecode> &bc, int reg)
+    integer (std::queue<Bytecode> &bc, Token &token, int reg)
     {
-        assert(peek().type == TKN_INTEGER);
-        Token tkn = next();
-        bc.push(Bytecode(OP_MOVESTR, (Register) reg, tkn.toPrimitive()));
+        assert(token.type == TKN_INTEGER);
+        bc.push(Bytecode(OP_MOVE, (Register) reg, token.toPrimitive()));
         bc.push(Bytecode(OP_PUSH, (Register) reg));
     }
 
     void
-    string (std::queue<Bytecode> &bc, int reg)
+    string (std::queue<Bytecode> &bc, Token &token, int reg)
     {
-        assert(peek().type == TKN_STRING);
-        Token tkn = next();
-        bc.push(Bytecode(OP_MOVE, (Register) reg, tkn.toPrimitive()));
+        assert(token.type == TKN_STRING);
+        bc.push(Bytecode(OP_MOVESTR, (Register) reg, token.toPrimitive()));
         bc.push(Bytecode(OP_PUSH, (Register) reg));
     }
 
@@ -102,14 +88,11 @@ private:
     void
     primitive (std::queue<Bytecode> &bc, Token &token /*, int arg*/)
     {
-        //assert(arg != 0 && arg <= NUM_ARG_REGISTERS);
-
         int reg = (int) REG1;
-
         if (token.type == TKN_STRING)
-            return string(bc, reg);
+            return string(bc, token, reg);
         else
-            return integer(bc, reg);
+            return integer(bc, token, reg);
     }
 
     /* <symbol> := [A-Za-z]+[0-9]* */
@@ -166,13 +149,13 @@ private:
     {
         assert(symbol.type == TKN_SYMBOL);
 
-        int index = _machine.procedureEntry(symbol.str);
-        bc.push(Bytecode(OP_CALL, Primitive(index)));
-
+        /* parse expressions first to allow arguments onto stack for call */
         expect(TKN_LPAREN);
         while (peek().type != TKN_RPAREN)
             expr(bc);
         next();
+
+        bc.push(Bytecode(OP_CALL, Primitive(symbol.str)));
     }
 
     /* <expr> := <reserved> | <call> | <symbol> | <list> | <primitive> */

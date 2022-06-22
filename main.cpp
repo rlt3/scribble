@@ -94,10 +94,7 @@ main (int argc, char **argv)
     auto tokens = parse.stream();
     auto instructions = compile.tokens(tokens);
     M.execute(instructions);
-
-    tokens = parse.stream();
-    instructions = compile.tokens(tokens);
-    M.execute(instructions);
+    printf("> %s\n", M.peek(0).toString().c_str());
 
     return 0;
 }
