@@ -60,7 +60,7 @@ main (int argc, char **argv)
      *   symbols once they've been compiled.
      */
 
-    Parse parse;
+    Parse parse(std::cin);
     Machine M;
     Compile compile(M);
 
@@ -91,11 +91,11 @@ main (int argc, char **argv)
         Bytecode(OP_HALT)
     }));
 
-    auto tokens = parse.stream(std::cin);
+    auto tokens = parse.stream();
     auto instructions = compile.tokens(tokens);
     M.execute(instructions);
 
-    tokens = parse.stream(std::cin);
+    tokens = parse.stream();
     instructions = compile.tokens(tokens);
     M.execute(instructions);
 

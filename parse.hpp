@@ -48,34 +48,18 @@
 class Parse
 {
 public:
-    Parse ()
+    Parse (std::istream& input)
+        : _stream(input)
     { }
 
-    /*
-     * Parse an input stream. This parsing is different than parsing a static
-     * file.  One difference is that calling `next' in the wrong area can cause
-     * the parser to wait for more input rather than return an expression.
-     *
-     * Get the first line from an input stream and parse it.
-     */
+    /* Parse the input stream for a single expression */
     std::queue<Token>
-    stream (std::istream& input)
+    stream ()
     {
-        std::string line = "";
-        int c;
-        while (!input.eof()) {
-            c = input.get();
-            if (c == '\n')
-                break;
-            line += c;
-        }
-
-        _stream = std::stringstream(line);
         _tokens = std::queue<Token>();
 
         skipwhitespace();
-        while (!_stream.eof())
-            expr();
+        expr();
 
         _tokens.push(TKN_EOF);
         return _tokens;
@@ -83,7 +67,7 @@ public:
 
 protected:
     std::queue<Token> _tokens;
-    std::stringstream _stream;
+    std::istream& _stream;
 
     int
     next ()
@@ -113,12 +97,6 @@ protected:
     {
         while (!eof() && isspace(peek()))
             next();
-    }
-
-    bool
-    isnewline (int c)
-    {
-        return (c == '\n');
     }
 
     bool
@@ -191,6 +169,7 @@ private:
         _tokens.push(Token(TKN_SYMBOL, str));
     }
 
+    /* expr: <string> | <number> | <name>[(<expr>*)] */
     void
     expr ()
     {
@@ -204,8 +183,6 @@ private:
         }
 
         name();
-        skipwhitespace();
-
         if (peek() == '(') {
             next();
             _tokens.push(Token(TKN_LPAREN));
