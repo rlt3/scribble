@@ -91,10 +91,12 @@ main (int argc, char **argv)
         Bytecode(OP_HALT)
     }));
 
+    printf(REPL_INPUT_STR);
     auto tokens = parse.stream();
     auto instructions = compile.tokens(tokens);
     M.execute(instructions);
-    printf("> %s\n", M.peek(0).toString().c_str());
+    printf(REPL_OUTPUT_STR);
+    printf("%s\n", M.peek(0).toString().c_str());
 
     return 0;
 }

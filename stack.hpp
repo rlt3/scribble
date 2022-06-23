@@ -85,6 +85,7 @@ public:
     {
         if (stack_idx == num_reserved)
             fatal("Pop: stack underflow");
+        stack[stack_idx].assign(0);
         stack_idx--;
         return stack[stack_idx];
     }

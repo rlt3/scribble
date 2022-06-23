@@ -1,6 +1,10 @@
 #ifndef SCRIBBLE_DEFINITIONS
 #define SCRIBBLE_DEFINITIONS
 
+#define REPL_INPUT_STR  "< "
+#define REPL_OUTPUT_STR "> "
+#define REPL_INFO_STR   "| "
+
 #define REPL_SYMBOL "::repl::"
 #define NUM_ARG_REGISTERS 3
 

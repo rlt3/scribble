@@ -57,9 +57,14 @@ public:
         unsigned long entry = stack.reserveIndex();
         Data data;
 
+        printf("| Defining `%s' at %lu\n", name.c_str(), entry);
         while (!instructions.empty()) {
             Bytecode bc = instructions.front();
-            printf("| "); bc.print();
+
+            printf(REPL_INFO_STR);
+            putchar('\t');
+            bc.print();
+
             data.assign(bc);
             stack.reservePush(data);
             instructions.pop();
@@ -168,6 +173,16 @@ protected:
      * negative then address from the top of the stack, e.g. -1 is the top of
      * the stack, -2 is second from the top, etc. If the index is 0 or positive
      * then we gather arguments from the frame.
+     *
+     * For security and simplicity, because we don't want arbitrary access to
+     * values below the stack frame, we limit the range of `load` from
+     * [-NUM_ARG_REGISTERS - 1, n).
+     * TODO: verify match this limit won't overflow for procedures with a small
+     * number of arguments.
+     *
+     * The upper limit is unbound because the currently executed frame is
+     * always at the top of the stack. Provided that values are zeroed-out when
+     * the stack pops, arbitrary access to the top of the stack is fruitless.
      */
     void
     load (Primitive primitive, Register r)
@@ -175,12 +190,30 @@ protected:
         long index = primitive.integer();
         long whence;
         if (index < 0) {
+            assert(index >= -NUM_ARG_REGISTERS - 1);
             whence = index + 1;
         } else {
             long base = reg(REGBASE).primitive().integer();
             whence = base - stack.index() + index + 1;
         }
         registers[r] = stack.peek(whence);
+    }
+
+    /*
+     * Using the integer as an argument to `load`, place a refrence to that
+     * value on the stack into `r`.
+     */
+    void
+    reference (Primitive prm, Register r)
+    {
+        assert(0);
+    }
+
+    /* Dereference a reference in `r1` and place the value into `r2`. */
+    void
+    dereference (Register r1, Register r2)
+    {
+        assert(0);
     }
 
     /* push a register's value onto the stack */
@@ -301,7 +334,6 @@ private:
     setProcedure (std::string name, unsigned long entry, unsigned long nargs)
     {
         _definitions[name] = Procedure(name, entry, nargs);
-        printf("| defined `%s' at %lu\n", name.c_str(), entry);
     }
 
     const Procedure&
