@@ -78,9 +78,9 @@ public:
      * Get the entry point for a symbol.
      */
     unsigned long
-    procedureEntry (std::string name)
+    procedureEntry (std::string sym)
     {
-        return getProcedure(name).entry;
+        return getProcedure(sym).entry;
     }
 
     /*
@@ -108,16 +108,28 @@ public:
                 case OP_HALT:
                     goto cleanup;
 
+                case OP_MOVEINT:
+                    moveint(bc.primitive, bc.reg1);
+                    break;
+
                 case OP_MOVESTR:
-                    move(bc.primitive, bc.reg1);
+                    movestr(bc.primitive, bc.reg1);
                     break;
 
-                case OP_MOVE:
-                    move(bc.primitive, bc.reg1);
+                case OP_MOVESYM:
+                    movesym(bc.primitive, bc.reg1);
                     break;
 
-                case OP_LOAD:
-                    load(bc.primitive, bc.reg1);
+                case OP_LOADINT:
+                    loadint(bc.primitive, bc.reg1);
+                    break;
+
+                case OP_LOADSTR:
+                    loadstr(bc.primitive, bc.reg1);
+                    break;
+
+                case OP_LOADSYM:
+                    loadsym(bc.primitive, bc.reg1);
                     break;
 
                 case OP_PUSH:
@@ -163,8 +175,23 @@ protected:
 
     /* move an immediate value into a register */
     void
-    move (Primitive primitive, Register reg)
+    moveint (Primitive primitive, Register reg)
     {
+        assert(primitive.type() == PRM_INTEGER);
+        registers[reg].assign(primitive);
+    }
+
+    void
+    movestr (Primitive primitive, Register reg)
+    {
+        assert(primitive.type() == PRM_STRING);
+        registers[reg].assign(primitive);
+    }
+
+    void
+    movesym (Primitive primitive, Register reg)
+    {
+        assert(primitive.type() == PRM_SYMBOL);
         registers[reg].assign(primitive);
     }
 
@@ -184,10 +211,9 @@ protected:
      * always at the top of the stack. Provided that values are zeroed-out when
      * the stack pops, arbitrary access to the top of the stack is fruitless.
      */
-    void
-    load (Primitive primitive, Register r)
+    Data
+    load (const int index)
     {
-        long index = primitive.integer();
         long whence;
         if (index < 0) {
             assert(index >= -NUM_ARG_REGISTERS - 1);
@@ -196,7 +222,31 @@ protected:
             long base = reg(REGBASE).primitive().integer();
             whence = base - stack.index() + index + 1;
         }
-        registers[r] = stack.peek(whence);
+        return stack.peek(whence);
+    }
+
+    void
+    loadint (Primitive primitive, Register r)
+    {
+        Data data = load(primitive.integer());
+        assert(data.primitive().type() == PRM_INTEGER);
+        registers[r].assign(data);
+    }
+
+    void
+    loadstr (Primitive primitive, Register r)
+    {
+        Data data = load(primitive.integer());
+        assert(data.primitive().type() == PRM_STRING);
+        registers[r].assign(data);
+    }
+
+    void
+    loadsym (Primitive primitive, Register r)
+    {
+        Data data = load(primitive.integer());
+        assert(data.primitive().type() == PRM_SYMBOL);
+        registers[r].assign(data);
     }
 
     /*
@@ -237,14 +287,18 @@ protected:
      * pointer (current PC) and the current REGBASE.
      */
     void
-    call (Primitive symbol)
+    call (Primitive primitive)
     {
-        std::string name = symbol.string();
-        auto& proc = getProcedure(name);
+        /*
+         * There should be no argument to call. The symbol of the procedure
+         * should be placed on the stack instead.
+         */
+        std::string sym = primitive.symbol();
+        auto& proc = getProcedure(sym);
         Data old_base = reg(REGBASE);
 
         if (stack.index() - old_base.primitive().integer() < proc.nargs)
-            fatal("Not enough provided arguments for procedure `%s'", name.c_str());
+            fatal("Not enough provided arguments for procedure `%s'", sym.c_str());
 
         /* Pop all arguments and hold them temporarily */
         std::stack<Data> arguments;

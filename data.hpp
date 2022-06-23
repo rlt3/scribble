@@ -102,12 +102,9 @@ struct Data
     toString ()
     {
         switch (_type) {
-            case DATA_CODE: return "<code>";
+            case DATA_CODE:      return "<code>";
             case DATA_PRIMITIVE: return _primitive.toString();
-
-            case DATA_NULL:
-            default:
-                return "NULL";
+            default:             return "NULL";
         }
     }
 

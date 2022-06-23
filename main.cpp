@@ -72,7 +72,7 @@ main (int argc, char **argv)
     //}), 0);
 
     M.defineProcedure("double", 1, std::queue<Bytecode>({
-        Bytecode(OP_LOAD, REG1, Primitive(0)),
+        Bytecode(OP_LOADINT, REG1, Primitive(0)),
         Bytecode(OP_PUSH, REG1),
         Bytecode(OP_PUSH, REG1),
         Bytecode(OP_CALL, Primitive("add")),
@@ -81,8 +81,8 @@ main (int argc, char **argv)
     }));
 
     M.defineProcedure("add-then-double", 2, std::queue<Bytecode>({
-        Bytecode(OP_LOAD, REG1, Primitive(0)),
-        Bytecode(OP_LOAD, REG2, Primitive(1)),
+        Bytecode(OP_LOADINT, REG1, Primitive(0)),
+        Bytecode(OP_LOADINT, REG2, Primitive(1)),
         Bytecode(OP_PUSH, REG1),
         Bytecode(OP_PUSH, REG2),
         Bytecode(OP_CALL, Primitive("add")),

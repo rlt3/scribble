@@ -68,38 +68,33 @@ private:
         assert(0);
     }
 
-    void
-    integer (std::queue<Bytecode> &bc, Token &token, int reg)
-    {
-        assert(token.type == TKN_INTEGER);
-        bc.push(Bytecode(OP_MOVE, (Register) reg, token.toPrimitive()));
-        bc.push(Bytecode(OP_PUSH, (Register) reg));
-    }
-
-    void
-    string (std::queue<Bytecode> &bc, Token &token, int reg)
-    {
-        assert(token.type == TKN_STRING);
-        bc.push(Bytecode(OP_MOVESTR, (Register) reg, token.toPrimitive()));
-        bc.push(Bytecode(OP_PUSH, (Register) reg));
-    }
-
-    /* primitive = <string> | <integer> */
+    /* primitive = <string> | <integer> | <symbol> */
     void
     primitive (std::queue<Bytecode> &bc, Token &token /*, int arg*/)
     {
-        int reg = (int) REG1;
-        if (token.type == TKN_STRING)
-            return string(bc, token, reg);
-        else
-            return integer(bc, token, reg);
-    }
+        Register reg = REG1;
+        Operator op;
+        switch (token.type) {
+            case TKN_STRING:
+                assert(token.type == TKN_STRING);
+                op = OP_MOVESTR;
+                break;
 
-    /* <symbol> := [A-Za-z]+[0-9]* */
-    void
-    symbol (std::queue<Bytecode> &bc, Token &symbol)
-    {
-        assert(0);
+            case TKN_INTEGER:
+                assert(token.type == TKN_INTEGER);
+                op = OP_MOVEINT;
+                break;
+
+            case TKN_SYMBOL:
+                assert(token.type == TKN_SYMBOL);
+                op = OP_MOVESYM;
+                break;
+
+            default:
+                fatal("Non-primitive token encountered: `%s`!", token.str.c_str());
+        }
+        bc.push(Bytecode(op, reg, token.toPrimitive()));
+        bc.push(Bytecode(OP_PUSH, reg));
     }
 
     void
@@ -155,10 +150,10 @@ private:
             expr(bc);
         next();
 
-        bc.push(Bytecode(OP_CALL, Primitive(symbol.str)));
+        bc.push(Bytecode(OP_CALL, Primitive(PRM_SYMBOL, symbol.str)));
     }
 
-    /* <expr> := <reserved> | <call> | <symbol> | <list> | <primitive> */
+    /* <expr> := <reserved> | <call> | <list> | <primitive> */
     void
     expr (std::queue<Bytecode> &bc)
     {
@@ -174,8 +169,7 @@ private:
                 return;
             }
 
-            symbol(bc, token);
-            return;
+            goto prim;
         }
 
         if (token.type == TKN_LPAREN) {
@@ -183,6 +177,7 @@ private:
             return;
         }
 
+prim:
         primitive(bc, token);
     }
 };

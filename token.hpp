@@ -44,6 +44,7 @@ struct Token
         switch (type) {
             case TKN_STRING:  return Primitive(str);
             case TKN_INTEGER: return Primitive(std::stoul(str));
+            case TKN_SYMBOL:  return Primitive(PRM_SYMBOL, str);
             default:
                 fatal("Unimplemented token -> primitive conversion! `%d'", type);
         }

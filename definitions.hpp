@@ -21,9 +21,12 @@ typedef enum {
 typedef enum {
     OP_NULL,
     OP_HALT,
-    OP_MOVE,
     OP_MOVESTR,
-    OP_LOAD,
+    OP_MOVEINT,
+    OP_MOVESYM,
+    OP_LOADSTR,
+    OP_LOADINT,
+    OP_LOADSYM,
     OP_PUSH,
     OP_POP,
     OP_CALL,
@@ -54,9 +57,11 @@ operatorString (Operator op)
     switch (op) {
         case OP_NULL:    return "NULL"; break;
         case OP_HALT:    return "HALT"; break;
-        case OP_MOVE:    return "MOVE"; break;
+        case OP_MOVEINT: return "MOVEINT"; break;
         case OP_MOVESTR: return "MOVESTR"; break;
-        case OP_LOAD:    return "LOAD"; break;
+        case OP_MOVESYM: return "MOVESYM"; break;
+        case OP_LOADINT: return "LOADINT"; break;
+        case OP_LOADSTR: return "LOADSTR"; break;
         case OP_PUSH:    return "PUSH"; break;
         case OP_POP:     return "POP"; break;
         case OP_CALL:    return "CALL"; break;
