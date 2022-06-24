@@ -120,22 +120,6 @@ private:
     list (std::queue<Bytecode> &bc)
     {
         assert(0);
-
-        /*
-         * Trying to determine how to handle lists. I'm thinking in terms of
-         * defining the `define` procedure. I really want to design those
-         * primitives using what is already available.
-         *
-         * What the machine requires for calls is a discrete list of arguments.
-         * I've decided to go with registers 1-4 as argument registers, i.e. a
-         * max of 4 arguments to any call. How do I parse the list after the
-         * name of the procedure into discrete elements, i.e to somehow know
-         * when to evaluate into one register or another?
-         *
-         * If we can simply parse the list to its bytecode equivalent, we can
-         * evaluate that list and walk the stack for a max of four values. We
-         * are using the machine itself to parse its own input.
-         */
     }
 
     /* <call> := <symbol>([<expr> ]*) */
