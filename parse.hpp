@@ -58,7 +58,6 @@ public:
     {
         _tokens = std::queue<Token>();
 
-        skipwhitespace();
         expr();
 
         _tokens.push(TKN_EOF);
@@ -157,7 +156,7 @@ private:
 
         c = peek();
         if (!isalpha(c))
-            fatal("Names cannot begin with numbers or digits");
+            fatal("Names cannot begin with numbers or digits: '%c'", c);
 
         while (true) {
             c = peek();
@@ -169,44 +168,37 @@ private:
         _tokens.push(Token(TKN_SYMBOL, str));
     }
 
-    /* expr: <string> | <number> | <name>[(<expr>*)] */
-    void
-    expr ()
-    {
-        if (peek() == '"') {
-            string();
-            return;
-        }
-        else if (isdigit(peek())) {
-            number();
-            return;
-        }
-
-        name();
-        if (peek() == '(') {
-            next();
-            _tokens.push(Token(TKN_LPAREN));
-
-            while (true) {
-                skipwhitespace();
-                if (eof())
-                    expect(')');
-                if (peek() == ')') {
-                    next();
-                    _tokens.push(Token(TKN_RPAREN));
-                    break;
-                }
-                expr();
-            }
-        }
-    }
-
+    /* list: ([<expr>]*) */
     void
     list ()
     {
-        /* TODO: handle end-of-input even if stream hasn't closed so eof isn't
-         * toggled.
-         */
+        expect('(');
+        _tokens.push(Token(TKN_LPAREN));
+        while (!eof() && peek() != ')')
+            expr();
+        expect(')');
+        _tokens.push(Token(TKN_RPAREN));
+    }
+
+    /* expr: <string> | <number> | <list> | <name>([<list>]*) */
+    void
+    expr ()
+    {
+        skipwhitespace();
+        if (peek() == '"') {
+            string();
+        }
+        else if (isdigit(peek())) {
+            number();
+        }
+        else if (peek() == '(') {
+            list();
+        }
+        else {
+            name();
+            if (peek() == '(')
+                list();
+        }
     }
 };
 

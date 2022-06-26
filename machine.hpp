@@ -39,6 +39,12 @@ public:
         return registers[reg];
     }
 
+    bool
+    empty ()
+    {
+        return stack.empty();
+    }
+
     Data
     peek (unsigned idx)
     {

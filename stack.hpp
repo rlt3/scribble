@@ -97,9 +97,15 @@ public:
     Data
     peek (signed long num)
     {
-        if (stack_idx == num_reserved)
+        if (empty())
             fatal("Peek: nothing on stack");
         return stack[stack_idx + num - 1];
+    }
+
+    bool
+    empty ()
+    {
+        return (stack_idx == num_reserved);
     }
 
     unsigned long

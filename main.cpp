@@ -96,7 +96,10 @@ main (int argc, char **argv)
     auto instructions = compile.tokens(tokens);
     M.execute(instructions);
     printf(REPL_OUTPUT_STR);
-    printf("%s\n", M.peek(0).toString().c_str());
+    if (!M.empty())
+        printf("%s\n", M.peek(0).toString().c_str());
+    else
+        puts("(null)");
 
     return 0;
 }

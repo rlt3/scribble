@@ -8,6 +8,11 @@
 #include "machine.hpp"
 #include "frame.hpp"
 
+typedef enum {
+    RSRV_NULL = 0,
+    RSRV_DEFINE,
+} ReservedSymbol;
+
 class Compile
 {
 public:
@@ -51,7 +56,8 @@ protected:
     {
         Token t = next();
         if (t.type != type)
-            fatal("Unexpected token type!");
+            fatal("Expected token of type `%s` but received `%s`!",
+                    tokenTypeString(type), tokenTypeString(t.type));
         return t;
     }
 
@@ -62,15 +68,9 @@ protected:
     }
 
 private:
-    void
-    define (std::string name, std::queue<Bytecode> bc)
-    {
-        assert(0);
-    }
-
     /* primitive = <string> | <integer> | <symbol> */
     void
-    primitive (std::queue<Bytecode> &bc, Token &token /*, int arg*/)
+    primitive (std::queue<Bytecode> &bc, Token &token)
     {
         Register reg = REG1;
         Operator op;
@@ -91,27 +91,49 @@ private:
                 break;
 
             default:
-                fatal("Non-primitive token encountered: `%s`!", token.str.c_str());
+                fatal("Non-primitive token encountered: `%s`!",
+                        token.str.c_str());
         }
         bc.push(Bytecode(op, reg, token.toPrimitive()));
         bc.push(Bytecode(OP_PUSH, reg));
     }
 
     void
-    reserved (std::queue<Bytecode> &bc, Token &symbol)
+    define (std::queue<Bytecode> &bc)
     {
-        /*
-         * Where we will handle runtime-only reserved procedures such as
-         * `define'.
-         */
-        assert(0);
+        expect(TKN_LPAREN);
+
+        Token name = expect(TKN_SYMBOL);
+        printf("proc name: %s\n", name.str.c_str());
+
+        expect(TKN_LPAREN);
+        while (peek().type != TKN_RPAREN) {
+            Token arg = expect(TKN_SYMBOL);
+            printf("got arg: %s\n", arg.str.c_str());
+        }
+        expect(TKN_RPAREN);
+
+        expect(TKN_RPAREN);
+    }
+
+    void
+    reserved (std::queue<Bytecode> &bc, ReservedSymbol &symbol)
+    {
+        switch (symbol) {
+            case RSRV_DEFINE: define(bc); break;
+            default:
+                fatal("Unimplemented or erroneous ReservedSymbol");
+        }
     }
 
     bool
-    isReserved (Token &token)
+    isReserved (Token &token, ReservedSymbol &symbol)
     {
-        //if (token.str == "define")
-        //    return true;
+        if (token.str == "define") {
+            symbol = RSRV_DEFINE;
+            return true;
+        }
+        symbol = RSRV_NULL;
         return false;
     }
 
@@ -143,8 +165,9 @@ private:
     {
         Token token = next();
         if (token.type == TKN_SYMBOL) {
-            if (isReserved(token)) {
-                reserved(bc, token);
+            ReservedSymbol reserved_symbol;
+            if (isReserved(token, reserved_symbol)) {
+                reserved(bc, reserved_symbol);
                 return;
             }
 
@@ -152,16 +175,12 @@ private:
                 call(bc, token);
                 return;
             }
-
-            goto prim;
         }
-
-        if (token.type == TKN_LPAREN) {
+        else if (token.type == TKN_LPAREN) {
             list(bc);
             return;
         }
 
-prim:
         primitive(bc, token);
     }
 };
