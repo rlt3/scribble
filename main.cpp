@@ -91,15 +91,20 @@ main (int argc, char **argv)
         Bytecode(OP_HALT)
     }));
 
-    printf(REPL_INPUT_STR);
-    auto tokens = parse.stream();
-    auto instructions = compile.tokens(tokens);
-    M.execute(instructions);
-    printf(REPL_OUTPUT_STR);
-    if (!M.empty())
-        printf("%s\n", M.peek(0).toString().c_str());
-    else
-        puts("(null)");
+    std::queue<Token> tokens;
+    std::queue<Bytecode> instructions;
+
+    while (true) {
+        printf(REPL_INPUT_STR);
+        tokens = parse.stream();
+        instructions = compile.tokens(tokens);
+        M.execute(instructions);
+        printf(REPL_OUTPUT_STR);
+        if (!M.empty())
+            printf("%s\n", M.peek(0).toString().c_str());
+        else
+            puts("(null)");
+    }
 
     return 0;
 }

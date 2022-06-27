@@ -98,22 +98,35 @@ private:
         bc.push(Bytecode(OP_PUSH, reg));
     }
 
+    /*
+     * <define> := <symbol>(<symbol> ([<symbol>]*) [<expr>]*)
+     *
+     * Compile to a custom, local set of Bytecode and then define it as a
+     * procedure. Push the name of that procedure as the return value.
+     */
     void
     define (std::queue<Bytecode> &bc)
     {
-        expect(TKN_LPAREN);
+        Token name;
+        std::vector<Token> args;
+        std::queue<Bytecode> body;
 
-        Token name = expect(TKN_SYMBOL);
-        printf("proc name: %s\n", name.str.c_str());
+        expect(TKN_LPAREN);
+        name = expect(TKN_SYMBOL);
 
         expect(TKN_LPAREN);
-        while (peek().type != TKN_RPAREN) {
-            Token arg = expect(TKN_SYMBOL);
-            printf("got arg: %s\n", arg.str.c_str());
-        }
+        while (peek().type != TKN_RPAREN)
+            args.push_back(expect(TKN_SYMBOL));
         expect(TKN_RPAREN);
 
+        while (peek().type != TKN_RPAREN)
+            expr(body);
         expect(TKN_RPAREN);
+
+        body.push(Bytecode(OP_RET));
+        _machine.defineProcedure(name.str.c_str(), args.size(), body);
+
+        primitive(bc, name);
     }
 
     void
