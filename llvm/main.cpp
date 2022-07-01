@@ -179,6 +179,24 @@ runMain (JITMachine &JIT)
     outs() << "main returns: " << entry(0, NULL) << "\n";
 }
 
+/*
+ * Functions in LLVM cannot be updated in place without significant effort.
+ * For that reasons, I am simpling going to use a numbering scheme for
+ * procedure versions. For example, if there's a procedure `double` and it gets
+ * updated, you might have functions `double_1`, `double_2`, etc, in the JIT.
+ * Because a particular function call be calling `double_1` when the new
+ * version `double_2` is created, then callees need to be updated. This
+ * cascades.
+ *
+ * To accomodate this design, I think every procedure holds its current IR as a
+ * string, keys to each version of the procedure -- along with each version's
+ * callees, and the current version string. Therefore, every newly compiled
+ * call to a procedure goes to the latest version.
+ *
+ * TODO: Designing the ABI. We are compiling bytecode into LLVM IR, so this is
+ * where primitives will be defined. Need to look into automatic inlining of
+ * them as well.
+ */
 int
 main (int argc, char **argv)
 {
