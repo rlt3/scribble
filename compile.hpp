@@ -68,9 +68,9 @@ protected:
     }
 
 private:
-    /* primitive = <string> | <integer> | <symbol> */
+    /* literal = <string> | <integer> | <symbol> */
     void
-    primitive (std::queue<Bytecode> &bc, Token &token)
+    literal (std::queue<Bytecode> &bc, Token &token)
     {
         Register reg = REG1;
         Operator op;
@@ -91,7 +91,7 @@ private:
                 break;
 
             default:
-                fatal("Non-primitive token encountered: `%s`!",
+                fatal("Non-literal token encountered: `%s`!",
                         token.str.c_str());
         }
         bc.push(Bytecode(op, reg, token.toPrimitive()));
@@ -126,7 +126,7 @@ private:
         body.push(Bytecode(OP_RET));
         _machine.defineProcedure(name.str.c_str(), args.size(), body);
 
-        primitive(bc, name);
+        literal(bc, name);
     }
 
     void
@@ -172,7 +172,7 @@ private:
         bc.push(Bytecode(OP_CALL, Primitive(PRM_SYMBOL, symbol.str)));
     }
 
-    /* <expr> := <reserved> | <call> | <list> | <primitive> */
+    /* <expr> := <reserved> | <call> | <list> | <literal> */
     void
     expr (std::queue<Bytecode> &bc)
     {
@@ -194,7 +194,7 @@ private:
             return;
         }
 
-        primitive(bc, token);
+        literal(bc, token);
     }
 };
 
@@ -202,14 +202,14 @@ private:
  * <integer> := [0-9]+
  * <string> := "[A-Za-z0-9 ]*"
  * <symbol> := [A-Za-z]+[0-9]*
- * <primitive> := <string> | <integer>
+ * <literal> := <string> | <integer>
  * <reserved> := push | pop | define | print | add ; etc.
  * <call> := <symbol>([<expr> ]*)
  * <list> := ([<expr> ]*)
- * <expr> := <reserved> | <symbol> | <call> | <list> | <primitive>
+ * <expr> := <reserved> | <symbol> | <call> | <list> | <literal>
  *
  * Ancestors are simply special pre-defined procedures which make direct use of
- * machine primitives.  the machine. All newly defined procedures may use
+ * machine primitives. All newly defined procedures may use
  * ancestor procedures. The only procedures able to be defined at the beginning
  * will be ancestor procedures as they are the building blocks of any program.
  * Thus all procedures of the machine are made of ancestors and their
