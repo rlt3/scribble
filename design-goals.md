@@ -26,3 +26,54 @@ argument counts, etc.
 
 7) A simple Lisp as the top-level language gives us power to easily create
 a traditional C-like language later.
+
+
+--------------------------------------------------------------------------------
+
+We are using LLVM for the JIT and native binary compiler. This allows us to
+take advantage of thousands of man-hours in an already working system. Because
+of this, there are drawbacks. First, we lose a little flexibility -- one such
+example is updating functions but symbols (functions) cannot be updated in
+LLVM's JIT easily (not that I have found), which calls for a numbering scheme.
+
+However, most things are still on track:
+    1) we can still design a custom ABI to fit the concatenative nature of
+    stack-based languages
+    2) we gain FFI and shared libraries for almost free
+    3) any runtime-specific instrumentation, e.g.  number of function entries,
+    exceptions, type information, can be gathered through FFI to some runtime
+    object, e.g. LLVM IR calls some Frame method
+    4) LLVM can compile a native executable for free
+
+The plan is to build the primitives of the machine in LLVM IR directly. For
+example, `add` would be a simple function that could be inlined defined in LLVM
+IR. Any user defined procedures (called `descendents`), ultimately are just
+combinations of primitives and other procedures.
+
+Because the LLVM IR must independently be compiled into a native executable,
+any structure must be embedded there and not into the runtime system. Therefore,
+the entry point to the program is always a function which sets up the stack and
+ABI before anything else. It can be the same function used in the JIT, but
+a check must be made to verify setup hasn't already completed (for subsequent
+execution) in the REPL.
+
+ABI:
+    - There are two stacks: the normal execution stack that gets updated when
+    the CPU executes `push` or `pop` instructions and the data stack which holds
+    all the values of the program.
+    - Data stack needs to be allocated and the pointers to its head is placed on
+    the execution stack.
+    - All Scribble related stack manipulations occur on the data stack. Calls
+    and other PC-modifying instructions within Scribble may use the execution
+    stack.
+    - Procedure arguments are hard to think about right now. What I do know is
+    that we are semi-constrained to the C ABI because that is kinda how the
+    LLVM IR is made. But because we can have two stacks, we can skirt some of
+    the rules there. (The only exception is FFI calls, which demands us to save
+    state of the stack.) My initial leanings are that arguments to a procedure
+    are placed in registers like x86.
+    - Heap allocation is something interesting to consider. I am thinking that
+    heap allocation is simply allocating a small, runtime-bounds-checked stack.
+    So, if we wanted dynamic strings, then we start by allocating some small
+    stack and increased it as needed, but ultimately just pushing and popping
+    characters onto the stack.
