@@ -179,6 +179,14 @@ runMain (JITMachine &JIT)
     outs() << "main returns: " << entry(0, NULL) << "\n";
 }
 
+extern "C" {
+    void
+    callme ()
+    {
+        printf("You did it. Good job!\n");
+    }
+}
+
 /*
  * Functions in LLVM cannot be updated in place without significant effort.
  * For that reasons, I am simpling going to use a numbering scheme for
@@ -208,47 +216,66 @@ main (int argc, char **argv)
     llvm::InitializeNativeTargetAsmPrinter();
     JITMachine JIT;
 
-    std::string mainIR = 
-        "declare i32 @foo()\n"
+    std::string selfIR =
+        "declare void @callme()\n"
         "define i32 @main() {\n"
-        "\t%result = call i32 @foo()\n"
-        "\tret i32 %result\n"
-        "}";
-    std::string fooIR = 
-        "define i32 @foo() {\n"
-        "\tret i32 33\n"
-        "}";
-    std::string redefineIR =
-        "define i32 @foo() {\n"
+        "\tcall void @callme()\n"
         "\tret i32 72\n"
         "}";
+    auto m = compileIR(context, selfIR);
 
-    /*
-     * We specify each module here because we can only use them once. These are
-     * unique_ptrs and thus we give ownership of them to the JIT when we add
-     * them.
+    /* 
+     * Create the function external `callme` function within the Module `m'.
+     * We *must* have the binary linked dynamically so that this symbol may
+     * be found.
      */
-    auto main1_module = compileIR(context, mainIR);
-    auto main2_module = compileIR(context, mainIR);
-    auto foo1_module = compileIR(context, fooIR);
-    auto foo2_module = compileIR(context, redefineIR);
+    FunctionType *type = FunctionType::get(Type::getVoidTy(context), false);
+    Function::Create(type, Function::ExternalLinkage, "callme", m.get());
 
-    /* Define the original, return 33 */
-    auto k1 = JIT.addModule(std::move(main1_module));
-    auto k2 = JIT.addModule(std::move(foo1_module));
+    auto k = JIT.addModule(std::move(m));
     runMain(JIT);
 
-    /*
-     * `foo` has changed, so update it, attempting to runMain here would cause
-     * a segmentation fault.
-     */
-    JIT.removeModule(k2);
-    auto k3 = JIT.addModule(std::move(foo2_module));
+    //std::string mainIR =
+    //    "declare i32 @foo()\n"
+    //    "define i32 @main() {\n"
+    //    "\t%result = call i32 @foo()\n"
+    //    "\tret i32 %result\n"
+    //    "}";
+    //std::string fooIR =
+    //    "define i32 @foo() {\n"
+    //    "\tret i32 33\n"
+    //    "}";
+    //std::string redefineIR =
+    //    "define i32 @foo() {\n"
+    //    "\tret i32 72\n"
+    //    "}";
 
-    /* now update the tree that points to `foo` */
-    JIT.removeModule(k1);
-    auto k4 = JIT.addModule(std::move(main2_module));
-    runMain(JIT);
+    ///*
+    // * We specify each module here because we can only use them once. These are
+    // * unique_ptrs and thus we give ownership of them to the JIT when we add
+    // * them.
+    // */
+    //auto main1_module = compileIR(context, mainIR);
+    //auto main2_module = compileIR(context, mainIR);
+    //auto foo1_module = compileIR(context, fooIR);
+    //auto foo2_module = compileIR(context, redefineIR);
+
+    ///* Define the original, return 33 */
+    //auto k1 = JIT.addModule(std::move(main1_module));
+    //auto k2 = JIT.addModule(std::move(foo1_module));
+    //runMain(JIT);
+
+    ///*
+    // * `foo` has changed, so update it, attempting to runMain here would cause
+    // * a segmentation fault.
+    // */
+    //JIT.removeModule(k2);
+    //auto k3 = JIT.addModule(std::move(foo2_module));
+
+    ///* now update the tree that points to `foo` */
+    //JIT.removeModule(k1);
+    //auto k4 = JIT.addModule(std::move(main2_module));
+    //runMain(JIT);
 
     return 0;
 }

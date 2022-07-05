@@ -1,5 +1,5 @@
 all:
-	clang++ -g -O3 main.cpp `llvm-config --cxxflags --ldflags --libs` -o llvm
+	$(CXX) -g -O3 main.cpp `llvm-config --cxxflags --ldflags --libs` -rdynamic -o llvm
 
 assemble:
 	llc basicIR.ll -o basicIR.s
