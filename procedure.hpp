@@ -2,27 +2,41 @@
 #define SCRIBBLE_PROCEDURE
 
 #include <string>
+#include <vector>
+#include "ir.hpp"
 
-struct Procedure
+/*
+ * The procedure owns information about the given IR. This information includes
+ * the callees and callers of this procedure which may be used by the JIT. The
+ * procedure owns its IR representation and (TODO) allows for insertions of
+ * instrumentation.
+ */
+class Procedure
 {
-    std::string name;
-    unsigned long entry;
-    unsigned long nargs;
-    bool is_compiled;
+public:
+    Procedure (IR ir, unsigned num_args);
 
-    Procedure()
-        : name("NULL")
-        , entry(0)
-        , nargs(0)
-        , is_compiled(false)
-    {}
+    /* Add a procedure which calls this procedure */
+    void
+    addCaller (std::string name);
 
-    Procedure(std::string name, unsigned long entry, unsigned long nargs)
-        : name(name)
-        , entry(entry)
-        , nargs(nargs)
-        , is_compiled(false)
-    {}
+    /* Add a procedure which this procedure calls */
+    void
+    addCallee (std::string name);
+
+    /* 
+     * Add an instrumentation function either before the procedure is called,
+     * after it has been called.
+     */
+    void
+    addInstrumentBefore ();
+    void
+    addInstrumentAfter ();
+
+protected:
+    unsigned num_args;
+    std::vector<std::string> caller;
+    std::vector<std::string> callee;
 };
 
 #endif

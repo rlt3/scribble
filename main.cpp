@@ -4,8 +4,12 @@
 #include <sstream>
 
 #include "parse.hpp"
-#include "machine.hpp"
-#include "compile.hpp"
+//#include "machine.hpp"
+//#include "compile.hpp"
+
+#include "ir.hpp"
+#include "procedure.hpp"
+#include "jit.hpp"
 
 int
 main (int argc, char **argv)
@@ -61,8 +65,8 @@ main (int argc, char **argv)
      */
 
     Parse parse(std::cin);
-    Machine M;
-    Compile compile(M);
+    //Machine M;
+    //Compile compile(M);
 
     //M.defineProcedure("leroy", std::queue<Bytecode>({
     //    Bytecode(OP_MOVESTR, REG1, Primitive("leroy")),
@@ -71,40 +75,40 @@ main (int argc, char **argv)
     //    Bytecode(OP_RET)
     //}), 0);
 
-    M.defineProcedure("double", 1, std::queue<Bytecode>({
-        Bytecode(OP_LOADINT, REG1, Primitive(0)),
-        Bytecode(OP_PUSH, REG1),
-        Bytecode(OP_PUSH, REG1),
-        Bytecode(OP_CALL, Primitive("add")),
-        Bytecode(OP_RET),
-        Bytecode(OP_HALT)
-    }));
+    //M.defineProcedure("double", 1, std::queue<Bytecode>({
+    //    Bytecode(OP_LOADINT, REG1, Primitive(0)),
+    //    Bytecode(OP_PUSH, REG1),
+    //    Bytecode(OP_PUSH, REG1),
+    //    Bytecode(OP_CALL, Primitive("add")),
+    //    Bytecode(OP_RET),
+    //    Bytecode(OP_HALT)
+    //}));
 
-    M.defineProcedure("add-then-double", 2, std::queue<Bytecode>({
-        Bytecode(OP_LOADINT, REG1, Primitive(0)),
-        Bytecode(OP_LOADINT, REG2, Primitive(1)),
-        Bytecode(OP_PUSH, REG1),
-        Bytecode(OP_PUSH, REG2),
-        Bytecode(OP_CALL, Primitive("add")),
-        Bytecode(OP_CALL, Primitive("double")),
-        Bytecode(OP_RET),
-        Bytecode(OP_HALT)
-    }));
+    //M.defineProcedure("add-then-double", 2, std::queue<Bytecode>({
+    //    Bytecode(OP_LOADINT, REG1, Primitive(0)),
+    //    Bytecode(OP_LOADINT, REG2, Primitive(1)),
+    //    Bytecode(OP_PUSH, REG1),
+    //    Bytecode(OP_PUSH, REG2),
+    //    Bytecode(OP_CALL, Primitive("add")),
+    //    Bytecode(OP_CALL, Primitive("double")),
+    //    Bytecode(OP_RET),
+    //    Bytecode(OP_HALT)
+    //}));
 
-    std::queue<Token> tokens;
-    std::queue<Bytecode> instructions;
+    //std::queue<Token> tokens;
+    //std::queue<Bytecode> instructions;
 
-    while (true) {
-        printf(REPL_INPUT_STR);
-        tokens = parse.stream();
-        instructions = compile.tokens(tokens);
-        M.execute(instructions);
-        printf(REPL_OUTPUT_STR);
-        if (!M.empty())
-            printf("%s\n", M.peek(0).toString().c_str());
-        else
-            puts("(null)");
-    }
+    //while (true) {
+    //    printf(REPL_INPUT_STR);
+    //    tokens = parse.stream();
+    //    instructions = compile.tokens(tokens);
+    //    M.execute(instructions);
+    //    printf(REPL_OUTPUT_STR);
+    //    if (!M.empty())
+    //        printf("%s\n", M.peek(0).toString().c_str());
+    //    else
+    //        puts("(null)");
+    //}
 
     return 0;
 }
