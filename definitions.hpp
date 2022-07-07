@@ -35,42 +35,42 @@ typedef enum {
     OP_PRINT,
 } Operator;
 
-static std::string
-registerString (Register reg)
-{
-    switch (reg) {
-        case REGNULL:  return "NULL"; break;
-        case REG1:     return "REG1"; break;
-        case REG2:     return "REG2"; break;
-        case REG3:     return "REG3"; break;
-        case REGCALL:  return "REGCALL"; break;
-        case REGBASE:  return "REGBASE"; break;
-        case REGCOUNT: return "REGCOUNT"; break;
-        default:
-            return "!-! BAD REGISTER !-!";
-    }
-}
-
-static std::string
-operatorString (Operator op)
-{
-    switch (op) {
-        case OP_NULL:    return "NULL"; break;
-        case OP_HALT:    return "HALT"; break;
-        case OP_MOVEINT: return "MOVEINT"; break;
-        case OP_MOVESTR: return "MOVESTR"; break;
-        case OP_MOVESYM: return "MOVESYM"; break;
-        case OP_LOADINT: return "LOADINT"; break;
-        case OP_LOADSTR: return "LOADSTR"; break;
-        case OP_PUSH:    return "PUSH"; break;
-        case OP_POP:     return "POP"; break;
-        case OP_CALL:    return "CALL"; break;
-        case OP_RET:     return "RET"; break;
-        case OP_ADD:     return "ADD"; break;
-        case OP_PRINT:   return "PRINT"; break;
-        default:
-            return "!-! BAD OP !-!";
-    }
-}
+//static std::string
+//registerString (Register reg)
+//{
+//    switch (reg) {
+//        case REGNULL:  return "NULL"; break;
+//        case REG1:     return "REG1"; break;
+//        case REG2:     return "REG2"; break;
+//        case REG3:     return "REG3"; break;
+//        case REGCALL:  return "REGCALL"; break;
+//        case REGBASE:  return "REGBASE"; break;
+//        case REGCOUNT: return "REGCOUNT"; break;
+//        default:
+//            return "!-! BAD REGISTER !-!";
+//    }
+//}
+//
+//static std::string
+//operatorString (Operator op)
+//{
+//    switch (op) {
+//        case OP_NULL:    return "NULL"; break;
+//        case OP_HALT:    return "HALT"; break;
+//        case OP_MOVEINT: return "MOVEINT"; break;
+//        case OP_MOVESTR: return "MOVESTR"; break;
+//        case OP_MOVESYM: return "MOVESYM"; break;
+//        case OP_LOADINT: return "LOADINT"; break;
+//        case OP_LOADSTR: return "LOADSTR"; break;
+//        case OP_PUSH:    return "PUSH"; break;
+//        case OP_POP:     return "POP"; break;
+//        case OP_CALL:    return "CALL"; break;
+//        case OP_RET:     return "RET"; break;
+//        case OP_ADD:     return "ADD"; break;
+//        case OP_PRINT:   return "PRINT"; break;
+//        default:
+//            return "!-! BAD OP !-!";
+//    }
+//}
 
 #endif

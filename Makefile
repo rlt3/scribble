@@ -1,9 +1,12 @@
 all: program
 
+CFLAGS=-Wall -g -ggdb --std=c++11 
+LDFLAGS=`llvm-config --cxxflags --ldflags --libs` -rdynamic
+
 program:
-	g++ -Wall -g -ggdb --std=c++11 -o scribble main.cpp
+	$(CXX) $(CFLAGS) main.cpp $(LDFLAGS) -o scribble 
 
 test:
-	g++ -Wall --std=c++11 -o scribble-test test.cpp
+	$(CXX) -Wall --std=c++11 -o scribble-test test.cpp
 	./scribble-test
 	rm ./scribble-test

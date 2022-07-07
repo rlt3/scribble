@@ -15,20 +15,20 @@ typedef enum {
     TKN_EOF,
 } TokenType;
 
-static const char *
-tokenTypeString (TokenType type)
-{
-    switch (type) {
-        case TKN_STRING:  return "<String>";
-        case TKN_INTEGER: return "<Integer>";
-        case TKN_FLOAT:   return "<Float>";
-        case TKN_SYMBOL:  return "<Symbol>";
-        case TKN_LPAREN:  return "<(>";
-        case TKN_RPAREN:  return "<)>";
-        case TKN_INVALID:
-        default:          return "!!BAD TYPE!!";
-    }
-}
+//static const char *
+//tokenTypeString (TokenType type)
+//{
+//    switch (type) {
+//        case TKN_STRING:  return "<String>";
+//        case TKN_INTEGER: return "<Integer>";
+//        case TKN_FLOAT:   return "<Float>";
+//        case TKN_SYMBOL:  return "<Symbol>";
+//        case TKN_LPAREN:  return "<(>";
+//        case TKN_RPAREN:  return "<)>";
+//        case TKN_INVALID:
+//        default:          return "!!BAD TYPE!!";
+//    }
+//}
 
 struct Token
 {
