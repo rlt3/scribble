@@ -127,6 +127,13 @@ public:
     {
     }
 
+    void
+    addIR (IR ir)
+    {
+        auto m = compileIR(ir.getString());
+        /*auto k = */addModule(std::move(m));
+    }
+
     /*
      * The entry point in the JIT isn't a hard address, but the internal name
      * for the latest version of the procedure, e.g. the high-level name of a
@@ -147,15 +154,30 @@ public:
     executeProcedure (Procedure &proc)
     {
         auto m = compileIR(proc.getIRString());
-        /*auto k = */addModule(std::move(m));
+        auto k = addModule(std::move(m));
 
         auto main = findSymbol("main");
         if (!main) {
             errs() << "Couldn't find symbol!\n";
             return;
         }
-        FunctionEntry entry = (FunctionEntry) (intptr_t) cantFail(main.getAddress());
+
+        auto entry = (FunctionEntry) (intptr_t) cantFail(main.getAddress());
         outs() << "proc returns: " << entry() << "\n";
+
+        removeModule(k);
+    }
+
+    unsigned long*
+    getStack ()
+    {
+        auto stack = findSymbol("stack");
+        if (!stack) {
+            errs() << "Couldn't find stack!\n";
+            return NULL;
+        }
+
+        return (unsigned long*) cantFail(stack.getAddress());
     }
 
 private:
@@ -166,6 +188,12 @@ private:
         auto K = ES.allocateVModule();
         cantFail(OptimizeLayer.addModule(K, std::move(M)));
         return K;
+    }
+
+    void
+    removeModule (VModuleKey K)
+    {
+        cantFail(OptimizeLayer.removeModule(K));
     }
 
     JITSymbol

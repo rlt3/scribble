@@ -63,6 +63,13 @@ ABI:
     all the values of the program.
     - Data stack needs to be allocated and the pointers to its head is placed on
     the execution stack.
+    - Because all data related to the runtime of the program is on the data
+    stack, doing runtime patching of the process is more feasible. For example,
+    the regular stack may be freely trampled upon to do any of the numerous
+    ancillary tasks of the runtime like reading input or replacing definitions.
+    No non-Scribble task will ever touch the Scribble data-stack, therefore we
+    may pause execution and allow for real-time replacement of functions without
+    destroying any runtime variables and values.
     - All Scribble related stack manipulations occur on the data stack. Calls
     and other PC-modifying instructions within Scribble may use the execution
     stack.
