@@ -153,7 +153,11 @@ public:
     void
     executeProcedure (Procedure &proc)
     {
-        auto m = compileIR(proc.getIRString());
+        std::string ir = 
+            "@stack = external global [4096 x i64]\n"
+            "@top = external global [4096 x i64]*\n"
+            + proc.getIRString();
+        auto m = compileIR(ir);
         auto k = addModule(std::move(m));
 
         auto main = findSymbol("main");
@@ -206,6 +210,7 @@ private:
     compileIR (std::string IR)
     {
         SMDiagnostic errhandler;
+        printf("IR:\n%s\n", IR.c_str());
         std::unique_ptr<MemoryBuffer> IRbuff = MemoryBuffer::getMemBuffer(IR);
         auto m = parseIR(*IRbuff, errhandler, context);
         if (!m) {
