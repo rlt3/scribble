@@ -71,6 +71,9 @@ protected:
     LLVMContext context;
     std::string tmp;
 
+    IR globals;
+    IR externals;
+
 public:
     JIT ()
         : Resolver(createLegacyLookupResolver(ES,
@@ -102,11 +105,21 @@ public:
               })
         , CompileCallbackMgr(cantFail(
               orc::createLocalCompileCallbackManager(TM->getTargetTriple(), ES, 0)))
+        , globals(IR(
+                "@stack = global [4096 x i64] zeroinitializer, align 16\n"
+                "@top = global i64* getelementptr inbounds ([4096 x i64], [4096 x i64]* @stack, i32 0, i32 0), align 8\n"))
+        , externals(IR(
+                "@stack = external global [4096 x i64]\n"
+                "@top = external global i64*\n"))
+
     {
         auto IndirectStubsMgrBuilder =
             orc::createLocalIndirectStubsManagerBuilder(TM->getTargetTriple());
         IndirectStubsMgr = IndirectStubsMgrBuilder();
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
+
+        /* initialize global state in the JIT */
+        addIR(globals);
     }
 
     static void
@@ -153,10 +166,7 @@ public:
     void
     executeProcedure (Procedure &proc)
     {
-        std::string ir = 
-            "@stack = external global [4096 x i64]\n"
-            "@top = external global [4096 x i64]*\n"
-            + proc.getIRString();
+        std::string ir = externals.getString() + proc.getIRString();
         auto m = compileIR(ir);
         auto k = addModule(std::move(m));
 
