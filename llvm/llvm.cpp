@@ -58,9 +58,6 @@ protected:
     LLVMContext context;
     std::string tmp;
 
-    IR globals;
-    IR externals;
-
 public:
     LLVMJIT ()
         : Resolver(createLegacyLookupResolver(ES,
@@ -92,34 +89,17 @@ public:
               })
         , CompileCallbackMgr(cantFail(
               orc::createLocalCompileCallbackManager(TM->getTargetTriple(), ES, 0)))
-        /*
-         * Define the values which should exist in all LLVM modules, e.g. the
-         * stack, and the external declarations that are needed to access them
-         * in each module.
-         */
-        , globals(IR(
-                "@stack = global [4096 x i64] zeroinitializer, align 16\n"
-                "@top = global i64* getelementptr inbounds ([4096 x i64], [4096 x i64]* @stack, i32 0, i32 0), align 8\n"))
-        , externals(IR(
-                "@stack = external global [4096 x i64]\n"
-                "@top = external global i64*\n"))
-
     {
         auto IndirectStubsMgrBuilder =
             orc::createLocalIndirectStubsManagerBuilder(TM->getTargetTriple());
         IndirectStubsMgr = IndirectStubsMgrBuilder();
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
-
-        /*
-         * Initialize global state in the JIT.
-         */
-        defineIR(globals);
     }
 
     void
-    defineIR (IR ir)
+    defineIR (std::string ir)
     {
-        auto m = compileIR(ir.getString());
+        auto m = compileIR(ir);
         /*auto k = */addModule(std::move(m));
     }
 
@@ -128,10 +108,9 @@ public:
      * not added as a global definition.
      */
     void
-    executeIR (std::string name, IR &ir)
+    executeIR (std::string name, std::string ir)
     {
-        std::string finalIR = externals.getString() + ir.getString();
-        auto m = compileIR(finalIR);
+        auto m = compileIR(ir);
         auto k = addModule(std::move(m));
 
         auto func = findSymbol(name);
@@ -243,13 +222,13 @@ LLVM::~LLVM ()
 }
 
 void
-LLVM::defineIR (IR ir)
+LLVM::defineIR (std::string ir)
 {
     ((LLVMJIT*) this->context)->defineIR(ir);
 }
 
 void
-LLVM::execute (std::string name, IR ir)
+LLVM::execute (std::string name, std::string ir)
 {
     ((LLVMJIT*) this->context)->executeIR(name, ir);
 }

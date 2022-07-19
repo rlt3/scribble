@@ -43,13 +43,13 @@ public:
     void
     defineIR (IR ir)
     {
-        llvm.defineIR(ir);
+        llvm.defineIR(ir.getString());
     }
 
     void
     executeProcedure (Procedure &p)
     {
-        llvm.execute(p.getName(), p.getIRString());
+        llvm.execute(p.getName(), externals.getString() + p.getIRString());
     }
 
     unsigned long*

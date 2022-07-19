@@ -6,7 +6,7 @@ all: main
 main: llvm/llvm.o
 	$(CXX) $(CFLAGS) main.cpp $^ $(LDFLAGS) -o scribble 
 
-llvm/llvm.o:
+llvm/llvm.o: llvm/llvm.cpp
 	$(CXX) $(CFLAGS) -c llvm/llvm.cpp $(LDFLAGS) -o llvm/llvm.o
 
 test:
