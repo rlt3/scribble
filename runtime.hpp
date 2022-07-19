@@ -1,16 +1,29 @@
 #ifndef SCRIBBLE_JIT
 #define SCRIBBLE_JIT
 
-#include <algorithm>
-#include <map>
-#include <memory>
-#include <set>
 #include <string>
-#include <vector>
+#include <stack>
 
 #include "llvm.hpp"
 #include "ir.hpp"
 #include "procedure.hpp"
+#include "primitive.hpp"
+
+static std::stack<PrimitiveType> _typestack;
+
+extern "C" {
+    void
+    typestack_pushInteger ()
+    {
+        _typestack.push(PRM_INTEGER);
+    }
+
+    void
+    typestack_pushString ()
+    {
+        _typestack.push(PRM_STRING);
+    }
+}
 
 class Runtime
 {
@@ -27,11 +40,14 @@ public:
          * in each module.
          */
         : globals(IR(
-                "@stack = global [4096 x i64] zeroinitializer, align 16\n"
-                "@top = global i64* getelementptr inbounds ([4096 x i64], [4096 x i64]* @stack, i32 0, i32 0), align 8\n"))
+            "@stack = global [4096 x i64] zeroinitializer, align 16\n"
+            "@top = global i64* getelementptr inbounds ([4096 x i64], [4096 x i64]* @stack, i32 0, i32 0), align 8\n"
+        ))
         , externals(IR(
-                "@stack = external global [4096 x i64]\n"
-                "@top = external global i64*\n"))
+            "@stack = external global [4096 x i64]\n"
+            "@top = external global i64*\n"
+            "declare void @typestack_pushInteger ()\n"
+        ))
 
     {
         /*
@@ -56,6 +72,12 @@ public:
     getStack ()
     {
         return llvm.getStack();
+    }
+
+    std::stack<PrimitiveType>&
+    getTypestack ()
+    {
+        return _typestack;
     }
 };
 
