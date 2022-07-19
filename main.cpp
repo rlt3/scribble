@@ -8,7 +8,7 @@
 #include "ir.hpp"
 #include "irbuilder.hpp"
 #include "procedure.hpp"
-#include "jit.hpp"
+#include "runtime.hpp"
 
 int
 main (int argc, char **argv)
@@ -17,8 +17,7 @@ main (int argc, char **argv)
     //Parse parse(std::cin);
     //tokens = parse.stream();
     
-    JIT::preinitialize();
-    JIT jit;
+    Runtime runtime;
 
     IRBuilder bump1;
     bump1.push("33");
@@ -28,13 +27,13 @@ main (int argc, char **argv)
     bump2.push("72");
     bump2.retvoid();
 
-    Procedure p1("foo", 0, bump1.buildFunc("main"));
-    Procedure p2("foo", 0, bump2.buildFunc("main"));
+    Procedure p1("foo", 0, bump1.buildFunc("foo"));
+    Procedure p2("foo", 0, bump2.buildFunc("foo"));
 
-    jit.executeProcedure(p1);
-    jit.executeProcedure(p2);
+    runtime.executeProcedure(p1);
+    runtime.executeProcedure(p2);
 
-    auto stackptr = jit.getStack();
+    auto stackptr = runtime.getStack();
     printf("%lu\n", stackptr[0]);
     printf("%lu\n", stackptr[1]);
 

@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <map>
-#include <memory>
-#include <set>
-#include <string>
-#include <vector>
+#include <cassert>
 
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
@@ -35,13 +30,16 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 
+#include "llvm.hpp"
+
+typedef int (*FunctionEntry) ();
+
 using namespace llvm;
 using namespace llvm::orc;
 
-typedef int (*FunctionEntry) (int, char*[]);
-
-class JITMachine {
-private:
+class LLVMJIT
+{
+protected:
     ExecutionSession ES;
     std::shared_ptr<SymbolResolver> Resolver;
     std::unique_ptr<TargetMachine> TM;
@@ -57,8 +55,14 @@ private:
     std::unique_ptr<JITCompileCallbackManager> CompileCallbackMgr;
     std::unique_ptr<IndirectStubsManager> IndirectStubsMgr;
 
+    LLVMContext context;
+    std::string tmp;
+
+    IR globals;
+    IR externals;
+
 public:
-    JITMachine()
+    LLVMJIT ()
         : Resolver(createLegacyLookupResolver(ES,
             [this](const std::string &Name) -> JITSymbol {
                 if (auto Sym = IndirectStubsMgr->findStub(Name, false))
@@ -88,19 +92,73 @@ public:
               })
         , CompileCallbackMgr(cantFail(
               orc::createLocalCompileCallbackManager(TM->getTargetTriple(), ES, 0)))
+        /*
+         * Define the values which should exist in all LLVM modules, e.g. the
+         * stack, and the external declarations that are needed to access them
+         * in each module.
+         */
+        , globals(IR(
+                "@stack = global [4096 x i64] zeroinitializer, align 16\n"
+                "@top = global i64* getelementptr inbounds ([4096 x i64], [4096 x i64]* @stack, i32 0, i32 0), align 8\n"))
+        , externals(IR(
+                "@stack = external global [4096 x i64]\n"
+                "@top = external global i64*\n"))
+
     {
         auto IndirectStubsMgrBuilder =
             orc::createLocalIndirectStubsManagerBuilder(TM->getTargetTriple());
         IndirectStubsMgr = IndirectStubsMgrBuilder();
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
+
+        /*
+         * Initialize global state in the JIT.
+         */
+        defineIR(globals);
     }
 
-    TargetMachine&
-    getTargetMachine()
+    void
+    defineIR (IR ir)
     {
-        return *TM;
+        auto m = compileIR(ir.getString());
+        /*auto k = */addModule(std::move(m));
     }
 
+    /*
+     * Compile the IR and then execute the procedure named `name`. This IR is
+     * not added as a global definition.
+     */
+    void
+    executeIR (std::string name, IR &ir)
+    {
+        std::string finalIR = externals.getString() + ir.getString();
+        auto m = compileIR(finalIR);
+        auto k = addModule(std::move(m));
+
+        auto func = findSymbol(name);
+        if (!func) {
+            errs() << "Couldn't find procedure `" + name + "`!\n";
+            return;
+        }
+
+        auto entry = (FunctionEntry) (intptr_t) cantFail(func.getAddress());
+        outs() << name + "() => " << entry() << "\n";
+
+        removeModule(k);
+    }
+
+    unsigned long*
+    getStack ()
+    {
+        auto stack = findSymbol("stack");
+        if (!stack) {
+            errs() << "Couldn't find stack!\n";
+            return NULL;
+        }
+
+        return (unsigned long*) cantFail(stack.getAddress());
+    }
+
+private:
     VModuleKey
     addModule (std::unique_ptr<Module> M)
     {
@@ -110,19 +168,32 @@ public:
         return K;
     }
 
-    JITSymbol
-    findSymbol(const std::string Name)
-    {
-        return OptimizeLayer.findSymbol(mangle(Name), true);
-    }
-
     void
     removeModule (VModuleKey K)
     {
         cantFail(OptimizeLayer.removeModule(K));
     }
 
-private:
+    JITSymbol
+    findSymbol(const std::string Name)
+    {
+        return OptimizeLayer.findSymbol(mangle(Name), true);
+    }
+
+    std::unique_ptr<Module>
+    compileIR (std::string IR)
+    {
+        SMDiagnostic errhandler;
+        printf("IR:\n%s\n", IR.c_str());
+        std::unique_ptr<MemoryBuffer> IRbuff = MemoryBuffer::getMemBuffer(IR);
+        auto m = parseIR(*IRbuff, errhandler, context);
+        if (!m) {
+            errhandler.print("JIT", errs());
+            exit(1);
+        }
+        return m;
+    }
+
     std::string
     mangle (const std::string &Name)
     {
@@ -154,128 +225,37 @@ private:
     }
 };
 
-std::unique_ptr<Module>
-compileIR (LLVMContext &ctx, std::string IR)
+LLVM::LLVM ()
 {
-    SMDiagnostic errhandler;
-    std::unique_ptr<MemoryBuffer> IRbuff = MemoryBuffer::getMemBuffer(IR);
-    auto m = parseIR(*IRbuff, errhandler, ctx);
-    if (!m) {
-        errhandler.print("JIT", errs());
-        exit(1);
-    }
-    return m;
-}
+    static unsigned counter = 0;
+    assert(counter == 0);
+    counter++;
 
-void
-runMain (JITMachine &JIT)
-{
-    auto main = JIT.findSymbol("main");
-    if (!main) {
-        errs() << "Couldn't find symbol!\n";
-        return;
-    }
-    FunctionEntry entry = (FunctionEntry) (intptr_t) cantFail(main.getAddress());
-    outs() << "main returns: " << entry(0, NULL) << "\n";
-}
-
-extern "C" {
-    void
-    callme ()
-    {
-        printf("You did it. Good job!\n");
-    }
-}
-
-/*
- * Functions in LLVM cannot be updated in place without significant effort.
- * For that reasons, I am simpling going to use a numbering scheme for
- * procedure versions. For example, if there's a procedure `double` and it gets
- * updated, you might have functions `double_1`, `double_2`, etc, in the JIT.
- * Because a particular function call be calling `double_1` when the new
- * version `double_2` is created, then callees need to be updated. This
- * cascades.
- *
- * To accomodate this design, I think every procedure holds its current IR as a
- * string, keys to each version of the procedure -- along with each version's
- * callees, and the current version string. Therefore, every newly compiled
- * call to a procedure goes to the latest version.
- *
- * TODO: Designing the ABI. We are compiling bytecode into LLVM IR, so this is
- * where primitives will be defined. Need to look into automatic inlining of
- * them as well.
- */
-int
-main (int argc, char **argv)
-{
-    LLVMContext context;
-
-    /* JITMachine must be instantiated after these initializations */
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
-    JITMachine JIT;
+    this->context = (void*) new LLVMJIT();
+}
 
-    std::string selfIR =
-        "declare void @callme()\n"
-        "define i32 @main() {\n"
-        "\tcall void @callme()\n"
-        "\tret i32 72\n"
-        "}";
-    auto m = compileIR(context, selfIR);
+LLVM::~LLVM ()
+{
+    delete (LLVMJIT*) this->context;
+}
 
-    /* 
-     * Create the function external `callme` function within the Module `m'.
-     * We *must* have the binary linked dynamically so that this symbol may
-     * be found.
-     */
-    FunctionType *type = FunctionType::get(Type::getVoidTy(context), false);
-    Function::Create(type, Function::ExternalLinkage, "callme", m.get());
+void
+LLVM::defineIR (IR ir)
+{
+    ((LLVMJIT*) this->context)->defineIR(ir);
+}
 
-    auto k = JIT.addModule(std::move(m));
-    runMain(JIT);
+void
+LLVM::execute (std::string name, IR ir)
+{
+    ((LLVMJIT*) this->context)->executeIR(name, ir);
+}
 
-    //std::string mainIR =
-    //    "declare i32 @foo()\n"
-    //    "define i32 @main() {\n"
-    //    "\t%result = call i32 @foo()\n"
-    //    "\tret i32 %result\n"
-    //    "}";
-    //std::string fooIR =
-    //    "define i32 @foo() {\n"
-    //    "\tret i32 33\n"
-    //    "}";
-    //std::string redefineIR =
-    //    "define i32 @foo() {\n"
-    //    "\tret i32 72\n"
-    //    "}";
-
-    ///*
-    // * We specify each module here because we can only use them once. These are
-    // * unique_ptrs and thus we give ownership of them to the JIT when we add
-    // * them.
-    // */
-    //auto main1_module = compileIR(context, mainIR);
-    //auto main2_module = compileIR(context, mainIR);
-    //auto foo1_module = compileIR(context, fooIR);
-    //auto foo2_module = compileIR(context, redefineIR);
-
-    ///* Define the original, return 33 */
-    //auto k1 = JIT.addModule(std::move(main1_module));
-    //auto k2 = JIT.addModule(std::move(foo1_module));
-    //runMain(JIT);
-
-    ///*
-    // * `foo` has changed, so update it, attempting to runMain here would cause
-    // * a segmentation fault.
-    // */
-    //JIT.removeModule(k2);
-    //auto k3 = JIT.addModule(std::move(foo2_module));
-
-    ///* now update the tree that points to `foo` */
-    //JIT.removeModule(k1);
-    //auto k4 = JIT.addModule(std::move(main2_module));
-    //runMain(JIT);
-
-    return 0;
+unsigned long*
+LLVM::getStack ()
+{
+    return ((LLVMJIT*) this->context)->getStack();
 }

@@ -21,6 +21,12 @@ public:
     {}
 
     std::string
+    getName ()
+    {
+        return name;
+    }
+
+    std::string
     getIRString ()
     {
         return ir.getString();

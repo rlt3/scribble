@@ -23,6 +23,12 @@ public:
         add("store i64 " + number + ", i64* %old, align 8");
         add("%new = getelementptr inbounds i64, i64* %old, i32 1");
         add("store i64* %new, i64** @top, align 8");
+
+        /* 
+         * Here or somewhere near here is where we can optionally add a call to
+         * some internally defined method to book keep type values on the
+         * stack.
+         */
     }
 
     void
