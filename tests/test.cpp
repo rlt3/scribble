@@ -21,7 +21,6 @@ report_fail (int signum)
     exit(1);
 }
 
-
 #define BEGIN() \
     int \
     main (int argc, char **argv) \

@@ -28,7 +28,7 @@ argument counts, etc.
 a traditional C-like language later.
 
 
---------------------------------------------------------------------------------
+# Current Design
 
 We are using LLVM for the JIT and native binary compiler. This allows us to
 take advantage of thousands of man-hours in an already working system. Because
@@ -57,30 +57,36 @@ ABI before anything else. It can be the same function used in the JIT, but
 a check must be made to verify setup hasn't already completed (for subsequent
 execution) in the REPL.
 
-ABI:
-    - There are two stacks: the normal execution stack that gets updated when
-    the CPU executes `push` or `pop` instructions and the data stack which holds
-    all the values of the program.
-    - Data stack needs to be allocated and the pointers to its head is placed on
-    the execution stack.
-    - Because all data related to the runtime of the program is on the data
-    stack, doing runtime patching of the process is more feasible. For example,
-    the regular stack may be freely trampled upon to do any of the numerous
-    ancillary tasks of the runtime like reading input or replacing definitions.
-    No non-Scribble task will ever touch the Scribble data-stack, therefore we
-    may pause execution and allow for real-time replacement of functions without
-    destroying any runtime variables and values.
-    - All Scribble related stack manipulations occur on the data stack. Calls
-    and other PC-modifying instructions within Scribble may use the execution
-    stack.
-    - Procedure arguments are hard to think about right now. What I do know is
-    that we are semi-constrained to the C ABI because that is kinda how the
-    LLVM IR is made. But because we can have two stacks, we can skirt some of
-    the rules there. (The only exception is FFI calls, which demands us to save
-    state of the stack.) My initial leanings are that arguments to a procedure
-    are placed in registers like x86.
-    - Heap allocation is something interesting to consider. I am thinking that
-    heap allocation is simply allocating a small, runtime-bounds-checked stack.
-    So, if we wanted dynamic strings, then we start by allocating some small
-    stack and increased it as needed, but ultimately just pushing and popping
-    characters onto the stack.
+## ABI
+
+- There are two stacks: the normal execution stack that gets updated when
+the CPU executes `push` or `pop` instructions and the data stack which holds
+all the values of the program.
+
+- Data stack needs to be allocated and the pointers to its head is placed on
+the execution stack.
+
+- Because all data related to the runtime of the program is on the data
+stack, doing runtime patching of the process is more feasible. For example,
+the regular stack may be freely trampled upon to do any of the numerous
+ancillary tasks of the runtime like reading input or replacing definitions.
+No non-Scribble task will ever touch the Scribble data-stack, therefore we
+may pause execution and allow for real-time replacement of functions without
+destroying any runtime variables and values.
+
+- All Scribble related stack manipulations occur on the data stack. Calls
+and other PC-modifying instructions within Scribble may use the execution
+stack.
+
+- Procedure arguments are hard to think about right now. What I do know is
+that we are semi-constrained to the C ABI because that is kinda how the
+LLVM IR is made. But because we can have two stacks, we can skirt some of
+the rules there. (The only exception is FFI calls, which demands us to save
+state of the stack.) My initial leanings are that arguments to a procedure
+are placed in registers like x86.
+
+- Heap allocation is something interesting to consider. I am thinking that
+heap allocation is simply allocating a small, runtime-bounds-checked stack.
+So, if we wanted dynamic strings, then we start by allocating some small
+stack and increased it as needed, but ultimately just pushing and popping
+characters onto the stack.
