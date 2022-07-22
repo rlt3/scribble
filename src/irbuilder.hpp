@@ -13,8 +13,10 @@ public:
     }
 
     void
-    push (std::string number)
+    pushInteger (int number)
     {
+        auto n = std::to_string(number);
+
         /*
          * Get the current top of the stack and write to it. Then calculate the
          * next stack location and save it as the top.
@@ -22,7 +24,7 @@ public:
         auto curr = tmpvar();
         auto next = tmpvar();
         add("%" + curr + " = load i64*, i64** @top, align 8");
-        add("store i64 " + number + ", i64* %" + curr + ", align 8");
+        add("store i64 " + n + ", i64* %" + curr + ", align 8");
         add("%" + next + " = getelementptr inbounds i64, i64* %" + curr + ", i32 1");
         add("store i64* %" + next + ", i64** @top, align 8");
 
@@ -35,7 +37,21 @@ public:
     }
 
     void
-    pop ()
+    pushString (std::string str)
+    {
+        /*
+         * TODO:
+         * Trying to understand how I want to handle non-primitive types. I
+         * think heap allocating everything is fine. So, behind-the-scenes, we
+         * handle memory just like std::string or std::vector may. Therefore,
+         * all non-primitive types would simply be a pointer. This pointer can
+         * be aliased as the pointed-to object can be the explicit value of the
+         * pointer or a runtime structure.
+         */
+    }
+
+    void
+    popInteger ()
     {
     }
 

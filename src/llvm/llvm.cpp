@@ -32,7 +32,7 @@
 
 #include "llvm.hpp"
 
-typedef int (*FunctionEntry) ();
+typedef void (*FunctionEntry) ();
 
 using namespace llvm;
 using namespace llvm::orc;
@@ -120,7 +120,7 @@ public:
         }
 
         auto entry = (FunctionEntry) (intptr_t) cantFail(func.getAddress());
-        outs() << name + "() => " << entry() << "\n";
+        entry();
 
         removeModule(k);
     }
@@ -163,7 +163,10 @@ private:
     compileIR (std::string IR)
     {
         SMDiagnostic errhandler;
-        printf("IR:\n%s\n", IR.c_str());
+
+        /* TODO: debug mode to output this stuff */
+        //printf("IR:\n%s\n", IR.c_str());
+
         std::unique_ptr<MemoryBuffer> IRbuff = MemoryBuffer::getMemBuffer(IR);
         auto m = parseIR(*IRbuff, errhandler, context);
         if (!m) {

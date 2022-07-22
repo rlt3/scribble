@@ -1,31 +1,23 @@
-#include <cstdio>
-#include <cstdlib>
-
-#include <sstream>
-
-#include "parse.hpp"
+#include "test.cpp"
 
 #include "ir.hpp"
 #include "irbuilder.hpp"
 #include "procedure.hpp"
 #include "runtime.hpp"
 
-int
-main (int argc, char **argv)
+BEGIN();
+
+TEST(basicIntegerStackCheck)
 {
-    //std::queue<Token> tokens;
-    //Parse parse(std::cin);
-    //tokens = parse.stream();
-    
     Runtime runtime;
 
     IRBuilder bump1;
-    bump1.push("33");
+    bump1.pushInteger(33);
     bump1.retvoid();
 
     IRBuilder bump2;
-    bump2.push("72");
-    bump2.push("9");
+    bump2.pushInteger(72);
+    bump2.pushInteger(9);
     bump2.retvoid();
 
     Procedure p1("foo", 0, bump1.buildFunc("foo"));
@@ -35,12 +27,16 @@ main (int argc, char **argv)
     runtime.executeProcedure(p2);
 
     auto stackptr = runtime.getStack();
-    printf("%lu\n", stackptr[0]);
-    printf("%lu\n", stackptr[1]);
+    assert(stackptr[0] == 33);
+    assert(stackptr[1] == 72);
+    assert(stackptr[2] == 9);
 
     auto typestack = runtime.getTypestack();
-    printf("%u\n", typestack.top()); typestack.pop();
-    printf("%u\n", typestack.top());
+    for (int i = 0; i < 3; i++) {
+        assert(typestack.top() == PRM_INTEGER);
+        typestack.pop();
+    }
+    assert(typestack.size() == 0);
+};
 
-    return 0;
-}
+END();

@@ -1,4 +1,6 @@
 scribble
+.scribble-test
+emit.ll
 *.swp
 *.swo
 *.o
