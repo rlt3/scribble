@@ -27,7 +27,7 @@ public:
 void
 emitStaticStringAndStringPush ()
 {
-    static std::string s = "foobar";
+    std::string s = "foobar";
     *top = (Word) &s;
     top++;
     printf("%s\n", ((std::string*) stack[0])->c_str());

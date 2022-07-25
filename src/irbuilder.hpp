@@ -48,6 +48,7 @@ public:
          * be aliased as the pointed-to object can be the explicit value of the
          * pointer or a runtime structure.
          */
+        add("call void @typestack_pushString()");
     }
 
     void

@@ -85,8 +85,9 @@ the rules there. (The only exception is FFI calls, which demands us to save
 state of the stack.) My initial leanings are that arguments to a procedure
 are placed in registers like x86.
 
-- Heap allocation is something interesting to consider. I am thinking that
-heap allocation is simply allocating a small, runtime-bounds-checked stack.
-So, if we wanted dynamic strings, then we start by allocating some small
-stack and increased it as needed, but ultimately just pushing and popping
-characters onto the stack.
+- All non-primitive Scribble objects are heap objects. They are allocated and
+manipulated on the heap, but the ownership belongs to the Data stack. Meaning,
+an object's lifetime is how long it lasts on the Data stack. RAII, or how C++
+handles object lifetimes makes it so that the programmer doesn't really have
+to worry about memory. You still have to worry about ownership, aliasing, and
+things of that nature, but that too can be remedied.
