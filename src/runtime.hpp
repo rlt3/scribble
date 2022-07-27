@@ -47,6 +47,7 @@ public:
             "@stack = external global [4096 x i64]\n"
             "@top = external global i64*\n"
             "declare void @typestack_pushInteger ()\n"
+            "declare void @typestack_pushString ()\n"
         ))
 
     {

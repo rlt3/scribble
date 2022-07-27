@@ -57,6 +57,31 @@ public:
     }
 
     void
+    popString ()
+    {
+        /*
+         * TODO:
+         * If the Data stack is the final owner of allocated objects, then
+         * popping needs a type to determine if the popped value should be
+         * cleaned up in memory. Should that cleanup happen in-line or should
+         * it be relegated to the prologue of a function/frame?
+         */
+    }
+
+    void
+    peekString (int index)
+    {
+        /*
+         * TODO:
+         * If popping automatically cleans up values, then we need some
+         * interface to arbitrarily address values without popping them.  This
+         * provides an interface to lookup a value inside the stack at an
+         * index. This is negatively indexed, e.g. 0 is the top of the stack,
+         * -1 is one below the top, etc.
+         */
+    }
+
+    void
     load ()
     {
     }
@@ -82,14 +107,15 @@ public:
     buildFunc (std::string name)
     {
         std::string s = "define void @" + name + "() {\n";
-        for (auto line : _lines)
+        for (auto line : _body)
             s += line;
         s += "}\n";
         return IR(s);
     }
 
 protected:
-    std::vector<std::string> _lines;
+    std::vector<std::string> _body;
+    std::vector<std::string> _prologue;
     unsigned _tmp;
 
     std::string
@@ -103,7 +129,7 @@ protected:
     inline void
     add (std::string s)
     {
-        _lines.push_back("\t" + s + "\n");
+        _body.push_back("\t" + s + "\n");
     }
 };
 

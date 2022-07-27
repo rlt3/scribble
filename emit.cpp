@@ -6,10 +6,27 @@
 #include <cstdio>
 #include <string>
 
+#define PAGE 4096
+
 typedef unsigned long Word;
 
-Word stack[4096] = {0};
+Word stack[PAGE] = {0};
 Word* top = stack;
+
+void emitPrintString ()
+{
+    printf("%s\n", (char*) *(top - 1));
+}
+
+void emitStackPushHeapAllocation ()
+{
+    char *s = (char*) malloc(64);
+    if (!s)
+        exit(1);
+    strcpy(s, "leroy");
+    *top = (Word) s;
+    top++;
+}
 
 class Foo
 {
